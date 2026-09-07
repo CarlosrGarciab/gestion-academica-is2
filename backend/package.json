@@ -1,0 +1,34 @@
+{
+  "name": "gestion-academica-is2",
+  "version": "1.0.0",
+  "description": "Aplicación web responsive para centralizar la gestión académica y financiera de institutos de formación continua: cursos, cohortes, modalidades de cursado, inscripciones, pagos de estudiantes y liquidación de pagos a docentes.",
+  "main": "src/app.js",
+  "scripts": {
+    "start": "node src/app.js",
+    "dev": "nodemon src/app.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/CarlosrGarciab/gestion-academica-is2.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/CarlosrGarciab/gestion-academica-is2/issues"
+  },
+  "homepage": "https://github.com/CarlosrGarciab/gestion-academica-is2#readme",
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
+    "pg": "^8.23.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  }
+}
