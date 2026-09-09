@@ -22,3 +22,6 @@ const crearUsuario = async ({nombre, apellido, email, password_hash, id_rol}) =>
     )
     return rows[0]
 }
+
+
+module.exports = {buscarPorId, listarUsuariosActivos, crearUsuario}
