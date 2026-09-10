@@ -2,16 +2,35 @@ const usuarioModel = require('../models/usuarioModel');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
-const registrarUsuario = async({nombre, apellido, email, idRol, password}) =>
+const normalizarEmail = (email) => email.trim().toLowerCase();
+
+const registrarUsuario = async({nombre, apellido, email, idRol = 1, password}) =>
 {
-    const existente = await usuarioModel.buscarPorEmail(email);
+  if (!nombre?.trim() || !apellido?.trim() || !email?.trim() || !password)
+  {
+    throw new Error('Nombre, apellido, email y password son obligatorios');
+  }
+
+  if (password.length < 8 || !/[A-Za-z]/.test(password) || !/\d/.test(password))
+  {
+    throw new Error('La password debe tener al menos 8 caracteres, una letra y un numero');
+  }
+
+    const emailNormalizado = normalizarEmail(email);
+    const existente = await usuarioModel.buscarPorEmail(emailNormalizado);
     if (existente)
     {
         throw new Error('Email ya utilizado');
     }
 
+    const idRolPublico = await usuarioModel.buscarIdRolPublico(Number(idRol));
+    if (!idRolPublico)
+    {
+      throw new Error('El rol seleccionado no esta disponible para registro publico');
+    }
+
     const password_hash = await bcrypt.hash(password, 10);
-    const usuario = await usuarioModel.crearUsuario({nombre, apellido, email, id_rol: idRol, password_hash});
+    const usuario = await usuarioModel.crearUsuario({nombre: nombre.trim(), apellido: apellido.trim(), email: emailNormalizado, id_rol: idRolPublico, password_hash});
 
     return{
         id : usuario.id,
@@ -23,14 +42,18 @@ const registrarUsuario = async({nombre, apellido, email, idRol, password}) =>
 };
 
 const login = async (email, password) => {
-  const usuario = await usuarioModel.buscarPorEmail(email);
+  if (!email || !password) {
+    throw new Error('Email y password son obligatorios');
+  }
+
+  const usuario = await usuarioModel.buscarPorEmail(normalizarEmail(email));
   if (!usuario) {
-    throw new Error('Credenciales invalidas');
+    throw new Error('Credenciales inválidas');
   }
 
   const passwordValida = await bcrypt.compare(password, usuario.password_hash);
   if (!passwordValida) {
-    throw new Error('Credenciales invalidas');
+    throw new Error('Credenciales inválidas');
   }
 
   if (!usuario.activo) {

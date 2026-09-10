@@ -1,4 +1,3 @@
-const { actualizarUsuario } = require('../models/usuarioModel');
 const usuarioService = require('../services/usuarioService')
 
 const getById = async (req, res) => {
@@ -14,7 +13,7 @@ const listarUsuariosActivos = async (req, res) =>
 {
     try
     {
-        const usuariosActivos = await usarioService.listarUsuariosActivos();
+        const usuariosActivos = await usuarioService.listarUsuariosActivos();
         res.status(200).json(usuariosActivos);
     } catch (error)
     {
