@@ -1,5 +1,5 @@
 const { actualizarUsuario } = require('../models/usuarioModel');
-const usarioService = require('../services/usuarioService')
+const usuarioService = require('../services/usuarioService')
 
 const getById = async (req, res) => {
   try {
