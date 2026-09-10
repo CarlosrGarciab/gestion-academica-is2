@@ -1,4 +1,4 @@
-const usuarioModel = require('../models/usuarioModels')
+const usuarioModel = require('../models/usuarioModel')
 
 const toDTO = (row) => 
     ({
@@ -21,3 +21,5 @@ const listarUsuariosActivos = async () =>
     const usuariosActivos = await usuarioModel.listarUsuariosActivos()
     return usuariosActivos.map(toDTO)
 }
+
+module.exports = {obtenerPorId, listarUsuariosActivos}

@@ -16,7 +16,7 @@ const listarUsuariosActivos = async () =>
 const crearUsuario = async ({nombre, apellido, email, password_hash, id_rol}) =>
 {
     const {rows} = await pool.query 
-    (`INSERT INTO USUARIO(nombre, apellido, email, password_hash, id_rol 
+    (`INSERT INTO USUARIO(nombre, apellido, email, password_hash, id_rol)
         VALUES($1, $2, $3, $4, $5) RETURNING *`,
         [nombre, apellido, email, password_hash, id_rol]
     )
