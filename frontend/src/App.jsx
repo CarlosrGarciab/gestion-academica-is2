@@ -26,8 +26,20 @@ function App() {
   const [courseMessage, setCourseMessage] = useState(null)
   const [editingCourseId, setEditingCourseId] = useState(null)
   const [coursesLoading, setCoursesLoading] = useState(false)
+  const [courseSearch, setCourseSearch] = useState('')
+  const [courseStatus, setCourseStatus] = useState('all')
 
   const roleLabels = { 1: 'Estudiante', 2: 'Docente', 3: 'Administrador' }
+  const visibleCourses = courses.filter((course) => {
+    const search = courseSearch.trim().toLowerCase()
+    const matchesSearch = !search
+      || course.nombre.toLowerCase().includes(search)
+      || course.area_conocimiento.toLowerCase().includes(search)
+    const matchesStatus = courseStatus === 'all'
+      || (courseStatus === 'active' && course.activo)
+      || (courseStatus === 'inactive' && !course.activo)
+    return matchesSearch && matchesStatus
+  })
 
   useEffect(() => {
     if (authUser?.idRol !== 3) {
@@ -195,9 +207,6 @@ function App() {
           <span className="brand-mark" aria-hidden="true">CCGB</span>
           <span>Gestion Academica</span>
         </a>
-        <nav aria-label="Navegacion principal">
-          <a className="active" href="#resumen">Resumen</a>
-        </nav>
         <div className="profile-menu">
           <button className="profile-button" type="button" aria-label={authUser ? 'Cerrar sesión' : 'Abrir opciones de acceso'} aria-expanded={authUser ? undefined : authMenuOpen} onClick={authUser ? handleLogout : () => setAuthMenuOpen((open) => !open)}>
             {authUser ? <span className="logout-label">Salir</span> : <span className="person-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><circle cx="12" cy="8" r="3.5" /><path d="M5 20c.7-3.7 3.1-5.5 7-5.5s6.3 1.8 7 5.5" /></svg></span>}
@@ -249,15 +258,19 @@ function App() {
                 </div>
               </form>
               {courseMessage && <p className={`form-message ${courseMessage.type}`} role="status">{courseMessage.text}</p>}
+              <div className="course-filters">
+                <label>Buscar curso o área<input value={courseSearch} onChange={(event) => setCourseSearch(event.target.value)} placeholder="Ej. Tecnología" /></label>
+                <label>Estado<select value={courseStatus} onChange={(event) => setCourseStatus(event.target.value)}><option value="all">Todos</option><option value="active">Activos</option><option value="inactive">Inactivos</option></select></label>
+              </div>
               <div className="course-table-wrap">
-                {coursesLoading ? <p className="empty-state">Cargando cursos...</p> : courses.length === 0 ? <p className="empty-state">Todavía no hay cursos registrados.</p> : (
+                {coursesLoading ? <p className="empty-state">Cargando cursos...</p> : courses.length === 0 ? <p className="empty-state">Todavía no hay cursos registrados.</p> : visibleCourses.length === 0 ? <p className="empty-state">No hay cursos que coincidan con el filtro.</p> : (
                   <table className="course-table">
                     <thead><tr><th>Curso</th><th>Descripción</th><th>Área</th><th>Estado</th><th>Acciones</th></tr></thead>
-                    <tbody>{courses.map((course) => (
+                    <tbody>{visibleCourses.map((course) => (
                       <tr key={course.id} className={!course.activo ? 'inactive-row' : ''}>
                         <td>{course.nombre}</td><td>{course.descripcion}</td><td>{course.area_conocimiento}</td>
-                        <td><span className="course-state">{course.activo ? 'Activo' : 'Inactivo'}</span></td>
-                        <td className="course-actions"><button type="button" onClick={() => handleEditCourse(course)}>Editar</button><button type="button" onClick={() => handleToggleCourse(course)}>{course.activo ? 'Inactivar' : 'Activar'}</button></td>
+                        <td><span className={`course-state ${course.activo ? 'active' : 'inactive'}`}>{course.activo ? 'Activo' : 'Inactivo'}</span></td>
+                        <td className="course-actions"><button type="button" onClick={() => handleEditCourse(course)}>Editar</button><button type="button" onClick={() => handleToggleCourse(course)}>{course.activo ? 'Desactivar' : 'Activar'}</button></td>
                       </tr>
                     ))}</tbody>
                   </table>

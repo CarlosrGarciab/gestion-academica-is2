@@ -39,6 +39,10 @@ h1 { max-width: 700px; margin: 18px 0 20px; color: var(--ink); font-family: Geor
 .course-form input:focus, .course-form textarea:focus { outline: 2px solid var(--coral); outline-offset: 1px; }
 .course-description { grid-column: 1 / -1; }
 .course-form-actions { display: flex; align-items: center; gap: 12px; grid-column: 1 / -1; }
+.course-filters { display: grid; grid-template-columns: minmax(220px, 1fr) 180px; gap: 16px 20px; margin-top: 28px; }
+.course-filters label { display: grid; gap: 7px; color: var(--muted); font-size: 12px; }
+.course-filters input, .course-filters select { min-height: 42px; border: 1px solid var(--line); padding: 0 12px; color: var(--ink); background: var(--paper); font: inherit; }
+.course-filters input:focus, .course-filters select:focus { outline: 2px solid var(--coral); outline-offset: 1px; }
 .secondary-button { border: 1px solid var(--line); padding: 11px 17px; color: var(--ink); background: transparent; font: inherit; cursor: pointer; }
 .course-table-wrap { margin-top: 28px; overflow-x: auto; border-top: 1px solid var(--line); }
 .course-table { width: 100%; border-collapse: collapse; min-width: 760px; }
@@ -48,8 +52,10 @@ h1 { max-width: 700px; margin: 18px 0 20px; color: var(--ink); font-family: Geor
 .course-table td:first-child { font-weight: 700; }
 .course-table .course-state { display: inline-block; white-space: nowrap; }
 .inactive-row td { color: var(--muted); }
-.course-actions { display: flex; gap: 8px; white-space: nowrap; }
-.course-actions button { border: 0; border-bottom: 1px solid var(--coral); padding: 0 0 3px; color: var(--coral); background: transparent; font: inherit; font-size: 12px; cursor: pointer; }
+.course-actions { white-space: nowrap; }
+.course-actions button { border: 0; padding: 0; color: var(--coral); background: transparent; font: inherit; font-size: 12px; cursor: pointer; }
+.course-actions button + button { margin-left: 8px; }
+.course-actions button:hover, .course-actions button:focus, .course-actions button:active { color: var(--coral); outline: 0; }
 .empty-state { padding: 24px 0; color: var(--muted); font-size: 13px; }
 .register-hint { max-width: 230px; color: var(--muted); font-size: 12px; }
 .register-form { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px 20px; padding-top: 12px; }
@@ -69,7 +75,9 @@ h2 { margin: 8px 0 0; color: var(--ink); font-family: Georgia, serif; font-size:
 .course-number { color: var(--coral); font-family: Georgia, serif; font-size: 20px; }
 h3 { margin: 0 0 5px; color: var(--ink); font-size: 17px; font-weight: 600; }
 .course-row p { color: var(--muted); font-size: 13px; }
-.course-state { padding: 6px 10px; color: var(--sage-dark); background: var(--sage-light); font-size: 11px; font-weight: 700; }
+.course-state { display: inline-block; padding: 6px 10px; font-size: 11px; font-weight: 700; }
+.course-state.active { color: var(--sage-dark); background: var(--sage-light); }
+.course-state.inactive { color: #a33d2d; background: #f8dfd9; }
 footer { display: flex; justify-content: space-between; padding: 22px 0 35px; border-top: 1px solid var(--line); color: var(--muted); font-size: 11px; letter-spacing: .05em; }
 footer span:first-child { color: var(--ink); font-weight: 800; }
-@media (max-width: 700px) { .topbar nav { display: none; } .intro { display: block; padding: 60px 0 50px; } .intro-note { margin-top: 35px; } .section-heading { align-items: start; flex-direction: column; } .login-panel, .role-panel { display: block; } .login-form { grid-template-columns: 1fr; margin-top: 24px; } .login-form .register-button { grid-column: 1; } .course-form { grid-template-columns: 1fr; } .course-description, .course-form-actions { grid-column: 1; } .register-form { grid-template-columns: 1fr; } .register-button { grid-column: 1; } footer { gap: 12px; flex-wrap: wrap; } }
+@media (max-width: 700px) { .topbar nav { display: none; } .intro { display: block; padding: 60px 0 50px; } .intro-note { margin-top: 35px; } .section-heading { align-items: start; flex-direction: column; } .login-panel, .role-panel { display: block; } .login-form { grid-template-columns: 1fr; margin-top: 24px; } .login-form .register-button { grid-column: 1; } .course-form, .course-filters { grid-template-columns: 1fr; } .course-description, .course-form-actions { grid-column: 1; } .register-form { grid-template-columns: 1fr; } .register-button { grid-column: 1; } footer { gap: 12px; flex-wrap: wrap; } }
