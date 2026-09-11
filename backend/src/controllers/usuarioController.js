@@ -23,6 +23,13 @@ const listarUsuariosActivos = async (req, res) =>
 
 const actualizar = async (req, res) => {
   try {
+    const esOwner = req.user.id === Number(req.params.id)
+
+    if (!esOwner)
+    {
+      res.status(403).json({message : 'No puede editar el perfil de otro usuario'});
+    }
+
     const usuario = await usuarioService.actualizarUsuario(req.params.id, req.body);
     res.status(200).json(usuario);
   } catch (error) {
