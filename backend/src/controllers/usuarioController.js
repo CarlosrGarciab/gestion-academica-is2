@@ -27,7 +27,7 @@ const actualizar = async (req, res) => {
 
     if (!esOwner)
     {
-      res.status(403).json({message : 'No puede editar el perfil de otro usuario'});
+      return res.status(403).json({ message: 'No puede editar el perfil de otro usuario' });
     }
 
     const usuario = await usuarioService.actualizarUsuario(req.params.id, req.body);
