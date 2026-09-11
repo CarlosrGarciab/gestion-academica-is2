@@ -1,9 +1,25 @@
-const register = (req, res) => {
-  res.status(501).json({ message: 'Registro aún no implementado' });
+const authService = require('../services/authService')
+
+const register = async (req, res) => {
+  try 
+  {
+    const usuario = await authService.registrarUsuario(req.body);
+    res.status(201).json(usuario);  
+  } catch (error) 
+  {
+    res.status(400).json({message : error.message})
+  }
 };
 
-const login = (req, res) => {
-  res.status(501).json({ message: 'Inicio de sesión aún no implementado' });
+const login = async(req, res) => {
+  try{
+    const {email, password} = req.body;
+    const resultado = await authService.login(email, password);
+    res.status(200).json(resultado);
+  } catch (error)
+  {
+    res.status(400).json({message : error.message});
+  }
 };
 
 module.exports = {

@@ -18,14 +18,13 @@ const listarCursos = async (req, res) => {
 const crearCurso = async (req, res) => {
     try {
         const {
-            id_usuario,
             nombre,
             descripcion,
             area_conocimiento
         } = req.body;
 
         const curso = await cursoService.crearCurso(
-            id_usuario,
+            req.user.id,
             nombre,
             descripcion,
             area_conocimiento

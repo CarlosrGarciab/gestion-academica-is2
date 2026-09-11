@@ -66,6 +66,12 @@ npm run dev
 
 El backend queda disponible en `http://localhost:3000`. La comprobación de PostgreSQL está en `http://localhost:3000/health/db`.
 
+Para ejecutar el backend sin recarga automática:
+
+```bash
+npm start
+```
+
 ### Frontend
 
 ```bash
@@ -79,3 +85,60 @@ El frontend queda disponible en la URL que muestre Vite, normalmente `http://loc
 ### Base de datos
 
 Configurá las credenciales en `backend/.env` y ejecutá `backend/src/config/schema.sql` en la base `gestion_academica` antes de utilizar los endpoints que consultan datos.
+
+Variables esperadas en `backend/.env`:
+
+```text
+PORT=3000
+JWT_SECRET=una-clave-local-segura
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=gestion_academica
+DB_USER=postgres
+DB_PASSWORD=tu-contraseña
+```
+
+### Funcionalidades disponibles
+
+El frontend permite registrar usuarios como Estudiante o Docente, iniciar sesión y mostrar un panel básico según el rol. El registro público de Administrador está bloqueado; para desarrollo se utiliza el script indicado más abajo.
+
+Endpoints disponibles:
+
+| Método | Ruta | Requiere autenticación |
+|---|---|---|
+| `GET` | `/` | No |
+| `GET` | `/health` | No |
+| `GET` | `/health/db` | No |
+| `POST` | `/api/auth/register` | No |
+| `POST` | `/api/auth/login` | No |
+| `GET` | `/api/usuarios/:id` | JWT |
+| `GET` | `/api/usuarios/activos` | JWT + Administrador |
+| `PUT` | `/api/usuarios/:id` | JWT |
+| `PATCH` | `/api/usuarios/:id/activo` | JWT + Administrador |
+| `GET` | `/api/cursos` | JWT + Administrador |
+| `POST` | `/api/cursos` | JWT + Administrador |
+| `PUT` | `/api/cursos/:id` | JWT + Administrador |
+| `PATCH` | `/api/cursos/:id/activo` | JWT + Administrador |
+
+La administración de cursos permite crear, listar, editar e inactivar cursos. Las operaciones requieren un JWT de Administrador.
+
+### Usuario administrador de desarrollo
+
+Para probar las funciones administrativas sin habilitar el registro público de administradores, ejecutá desde `backend`:
+
+```powershell
+$env:ADMIN_NAME = "Admin"
+$env:ADMIN_LASTNAME = "Sistema"
+$env:ADMIN_EMAIL = "admin@ccgb.local"
+$env:ADMIN_PASSWORD = "Admin123!"
+npm run create-admin
+```
+
+Credenciales de desarrollo:
+
+- Nombre: `Admin Sistema`
+- Correo: `admin@ccgb.local`
+- Contraseña: `Admin123!`
+- Rol: `Administrador`
+
+Estas credenciales son únicamente para la base local de desarrollo. No deben utilizarse en producción.

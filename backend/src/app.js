@@ -3,17 +3,22 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const pool = require('./config/db');
-const apiRoutes = require('./routes/api');
+const authRoutes = require('./routes/authRoutes');
+const usuarioRoutes = require('./routes/usuarioRoutes');
+const cursoRoutes = require('./routes/cursoRoutes');
 
 const app = express();
 const port = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json());
-app.use('/api', apiRoutes);
+
+app.use('/api', authRoutes);
+app.use('/api', usuarioRoutes);
+app.use('/api', cursoRoutes);
 
 app.get('/', (req, res) => {
-  res.json({ mensaje: 'API Gestión Académica CCGB ejecutándose correctamente' });
+  res.json({ mensaje: 'API Gestion Academica CCGB ejecutandose correctamente' });
 });
 
 app.get('/health', (req, res) => {
@@ -32,7 +37,7 @@ app.get('/health/db', async (req, res) => {
 
 if (require.main === module) {
   app.listen(port, () => {
-    console.log(`Servidor ejecutándose en http://localhost:${port}`);
+    console.log(`Servidor ejecutandose en http://localhost:${port}`);
   });
 }
 
