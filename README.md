@@ -115,8 +115,12 @@ Endpoints disponibles:
 | `GET` | `/api/usuarios/activos` | JWT + Administrador |
 | `PUT` | `/api/usuarios/:id` | JWT |
 | `PATCH` | `/api/usuarios/:id/activo` | JWT + Administrador |
+| `GET` | `/api/cursos` | JWT + Administrador |
+| `POST` | `/api/cursos` | JWT + Administrador |
+| `PUT` | `/api/cursos/:id` | JWT + Administrador |
+| `PATCH` | `/api/cursos/:id/activo` | JWT + Administrador |
 
-La administración de cursos todavía no está disponible: aún faltan `cursoRoutes`, `cursoService` y `cursoModel`.
+La administración de cursos permite crear, listar, editar e inactivar cursos. Las operaciones requieren un JWT de Administrador.
 
 ### Usuario administrador de desarrollo
 

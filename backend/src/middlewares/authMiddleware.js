@@ -16,7 +16,11 @@ const verifyToken = (req, res, next) => {
 };
 
 const requireRole = (...roles) => (req, res, next) => {
-  if (!roles.includes(req.user?.rol)) {
+  const roleIds = { Estudiante: 1, Docente: 2, Administrador: 3 };
+  const userRole = Number(req.user?.rol);
+  const hasPermission = roles.some((role) => Number(roleIds[role] || role) === userRole);
+
+  if (!hasPermission) {
     return res.status(403).json({ message: 'Permisos insuficientes' });
   }
   next();

@@ -5,7 +5,7 @@ const cors = require('cors');
 const pool = require('./config/db');
 const authRoutes = require('./routes/authRoutes');
 const usuarioRoutes = require('./routes/usuarioRoutes');
-//const cursoRoutes = require('./routes/cursoRoutes'); // pendiente de migrar igual
+const cursoRoutes = require('./routes/cursoRoutes');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -15,7 +15,7 @@ app.use(express.json());
 
 app.use('/api', authRoutes);
 app.use('/api', usuarioRoutes);
-//app.use('/api', cursoRoutes); Se comenta ya que aun no esta nada de cursos - Pendiente de Yanis
+app.use('/api', cursoRoutes);
 
 app.get('/', (req, res) => {
   res.json({ mensaje: 'API Gestion Academica CCGB ejecutandose correctamente' });
