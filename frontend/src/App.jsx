@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import './App.css'
 
 function App() {
@@ -21,8 +21,38 @@ function App() {
     password: ''
   })
   const [registerMessage, setRegisterMessage] = useState(null)
+  const [courses, setCourses] = useState([])
+  const [courseData, setCourseData] = useState({ nombre: '', descripcion: '', area_conocimiento: '' })
+  const [courseMessage, setCourseMessage] = useState(null)
+  const [editingCourseId, setEditingCourseId] = useState(null)
+  const [coursesLoading, setCoursesLoading] = useState(false)
 
   const roleLabels = { 1: 'Estudiante', 2: 'Docente', 3: 'Administrador' }
+
+  useEffect(() => {
+    if (authUser?.idRol !== 3) {
+      return
+    }
+
+    const loadCourses = async () => {
+      setCoursesLoading(true)
+      try {
+        const session = JSON.parse(sessionStorage.getItem('ccgb_session'))
+        const response = await fetch(`${apiUrl}/api/cursos`, {
+          headers: { Authorization: `Bearer ${session?.token}` }
+        })
+        const result = await response.json()
+        if (!response.ok) throw new Error(result.message || 'No se pudieron cargar los cursos')
+        setCourses(result)
+      } catch (error) {
+        setCourseMessage({ type: 'error', text: error.message })
+      } finally {
+        setCoursesLoading(false)
+      }
+    }
+
+    loadCourses()
+  }, [apiUrl, authUser?.idRol])
 
   const handleRegisterChange = (event) => {
     const { name, value } = event.target
@@ -90,6 +120,74 @@ function App() {
     window.location.hash = section
   }
 
+  const handleCourseChange = (event) => {
+    const { name, value } = event.target
+    setCourseData((current) => ({ ...current, [name]: value }))
+  }
+
+  const resetCourseForm = () => {
+    setCourseData({ nombre: '', descripcion: '', area_conocimiento: '' })
+    setEditingCourseId(null)
+  }
+
+  const handleCourseSubmit = async (event) => {
+    event.preventDefault()
+    setCourseMessage(null)
+
+    try {
+      const session = JSON.parse(sessionStorage.getItem('ccgb_session'))
+      const editing = editingCourseId !== null
+      const response = await fetch(`${apiUrl}/api/cursos${editing ? `/${editingCourseId}` : ''}`, {
+        method: editing ? 'PUT' : 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session?.token}`
+        },
+        body: JSON.stringify(courseData)
+      })
+      const result = await response.json()
+      if (!response.ok) throw new Error(result.message || 'No se pudo guardar el curso')
+
+      setCourses((current) => editing
+        ? current.map((course) => course.id === result.id ? result : course)
+        : [...current, result])
+      resetCourseForm()
+      setCourseMessage({ type: 'success', text: editing ? 'Curso actualizado.' : 'Curso creado.' })
+    } catch (error) {
+      setCourseMessage({ type: 'error', text: error.message })
+    }
+  }
+
+  const handleEditCourse = (course) => {
+    setEditingCourseId(course.id)
+    setCourseData({
+      nombre: course.nombre,
+      descripcion: course.descripcion,
+      area_conocimiento: course.area_conocimiento
+    })
+    setCourseMessage(null)
+  }
+
+  const handleToggleCourse = async (course) => {
+    try {
+      const session = JSON.parse(sessionStorage.getItem('ccgb_session'))
+      const response = await fetch(`${apiUrl}/api/cursos/${course.id}/activo`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session?.token}`
+        },
+        body: JSON.stringify({ activo: !course.activo })
+      })
+      const result = await response.json()
+      if (!response.ok) throw new Error(result.message || 'No se pudo cambiar el estado')
+      setCourses((current) => current.map((item) => item.id === result.id ? result : item))
+      setCourseMessage({ type: 'success', text: result.activo ? 'Curso activado.' : 'Curso inactivado.' })
+    } catch (error) {
+      setCourseMessage({ type: 'error', text: error.message })
+    }
+  }
+
   return (
     <main className="app-shell">
       <header className="topbar">
@@ -124,14 +222,50 @@ function App() {
       </section>
 
       {authUser ? (
-        <section className="role-panel" id="panel">
+        <>
+          <section className="role-panel" id="panel">
           <div>
             <p className="eyebrow">PANEL PERSONAL</p>
             <h2>Hola, {authUser.nombre}</h2>
             <p className="intro-copy">Ingresaste como {roleLabels[authUser.idRol] || 'Usuario'}.</p>
           </div>
           <button className="register-button" type="button" onClick={handleLogout}>Cerrar sesión</button>
-        </section>
+          </section>
+          {authUser.idRol === 3 && (
+            <section className="courses-panel" id="cursos">
+              <div className="section-heading">
+                <div>
+                  <p className="eyebrow">OFERTA EDUCATIVA</p>
+                  <h2>Administración de cursos</h2>
+                </div>
+              </div>
+              <form className="course-form" onSubmit={handleCourseSubmit}>
+                <label>Nombre<input name="nombre" value={courseData.nombre} onChange={handleCourseChange} required /></label>
+                <label>Área de conocimiento<input name="area_conocimiento" value={courseData.area_conocimiento} onChange={handleCourseChange} required /></label>
+                <label className="course-description">Descripción<textarea name="descripcion" value={courseData.descripcion} onChange={handleCourseChange} required /></label>
+                <div className="course-form-actions">
+                  <button className="register-button" type="submit">{editingCourseId === null ? 'Crear curso' : 'Guardar cambios'}</button>
+                  {editingCourseId !== null && <button className="secondary-button" type="button" onClick={resetCourseForm}>Cancelar</button>}
+                </div>
+              </form>
+              {courseMessage && <p className={`form-message ${courseMessage.type}`} role="status">{courseMessage.text}</p>}
+              <div className="course-table-wrap">
+                {coursesLoading ? <p className="empty-state">Cargando cursos...</p> : courses.length === 0 ? <p className="empty-state">Todavía no hay cursos registrados.</p> : (
+                  <table className="course-table">
+                    <thead><tr><th>Curso</th><th>Descripción</th><th>Área</th><th>Estado</th><th>Acciones</th></tr></thead>
+                    <tbody>{courses.map((course) => (
+                      <tr key={course.id} className={!course.activo ? 'inactive-row' : ''}>
+                        <td>{course.nombre}</td><td>{course.descripcion}</td><td>{course.area_conocimiento}</td>
+                        <td><span className="course-state">{course.activo ? 'Activo' : 'Inactivo'}</span></td>
+                        <td className="course-actions"><button type="button" onClick={() => handleEditCourse(course)}>Editar</button><button type="button" onClick={() => handleToggleCourse(course)}>{course.activo ? 'Inactivar' : 'Activar'}</button></td>
+                      </tr>
+                    ))}</tbody>
+                  </table>
+                )}
+              </div>
+            </section>
+          )}
+        </>
       ) : (
         <section className="login-panel" id="login">
           <div className="section-heading">
