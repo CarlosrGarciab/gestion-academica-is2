@@ -205,7 +205,7 @@ function App() {
       <header className="topbar">
         <a className="brand" href="/" aria-label="CCGB inicio">
           <span className="brand-mark" aria-hidden="true">CCGB</span>
-          <span>Gestion Academica</span>
+          <span>Gestión Académica</span>
         </a>
         <div className="profile-menu">
           <button className="profile-button" type="button" aria-label={authUser ? 'Cerrar sesión' : 'Abrir opciones de acceso'} aria-expanded={authUser ? undefined : authMenuOpen} onClick={authUser ? handleLogout : () => setAuthMenuOpen((open) => !open)}>
@@ -222,7 +222,7 @@ function App() {
 
       <section className="intro" id="resumen">
         <div>
-          <p className="eyebrow">GESTION ACADEMICA / 2026</p>
+          <p className="eyebrow">GESTIÓN ACADÉMICA / 2026</p>
           <h1>Un lugar claro para que el aprendizaje avance.</h1>
           <p className="intro-copy">
             Cursos, cohortes y personas reunidos en un mismo espacio de trabajo.
@@ -300,7 +300,7 @@ function App() {
         <div className="section-heading">
           <div>
             <p className="eyebrow">NUEVA CUENTA</p>
-            <h2>Registrate para comenzar</h2>
+            <h2>Regístrate para comenzar</h2>
           </div>
         </div>
         <form className="register-form" onSubmit={handleRegister}>
@@ -314,7 +314,7 @@ function App() {
         {registerMessage && <p className={`form-message ${registerMessage.type}`} role="status">{registerMessage.text}</p>}
       </section>}
 
-      <footer><span>CCGB</span><span>Plataforma de gestion academica</span><span>v0.1.0</span></footer>
+      <footer><span>CCGB</span><span>Plataforma de gestión académica</span><span>v0.1.0</span></footer>
     </main>
   )
 }
