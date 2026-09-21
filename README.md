@@ -28,7 +28,7 @@ Los institutos de formación continua gestionan hoy sus cursos, docentes, estudi
 
 ## Arquitectura
 
-Monolito modular organizado en capas (presentación, aplicación, dominio, infraestructura), con los módulos Usuarios, Académico, Inscripciones y Financiero separados internamente por responsabilidad.
+Monolito modular organizado por capas técnicas: rutas, controladores, servicios, modelos, middlewares y configuración. Actualmente están implementados los módulos de autenticación, usuarios y cursos; los módulos de inscripciones y financiero quedan planificados para futuras historias.
 
 ## Estructura del repositorio
 
@@ -100,7 +100,7 @@ DB_PASSWORD=tu-contraseña
 
 ### Funcionalidades disponibles
 
-El frontend permite registrar usuarios como Estudiante o Docente, iniciar sesión y mostrar un panel básico según el rol. El registro público de Administrador está bloqueado; para desarrollo se utiliza el script indicado más abajo.
+El frontend permite registrar usuarios (siempre como Estudiante), iniciar sesión y mostrar un panel según el rol. El Administrador dispone de paneles para administrar usuarios (asignar/quitar el rol Docente) y cursos (crear, listar, editar, buscar, filtrar y activar o desactivar). El rol Docente no se elige en el registro: debe asignarlo el Administrador. El registro público de Administrador está bloqueado; para desarrollo se utiliza el script indicado más abajo.
 
 Endpoints disponibles:
 
@@ -115,12 +115,15 @@ Endpoints disponibles:
 | `GET` | `/api/usuarios/activos` | JWT + Administrador |
 | `PUT` | `/api/usuarios/:id` | JWT |
 | `PATCH` | `/api/usuarios/:id/activo` | JWT + Administrador |
+| `PATCH` | `/api/usuarios/:id/rol` | JWT + Administrador |
 | `GET` | `/api/cursos` | JWT + Administrador |
 | `POST` | `/api/cursos` | JWT + Administrador |
 | `PUT` | `/api/cursos/:id` | JWT + Administrador |
 | `PATCH` | `/api/cursos/:id/activo` | JWT + Administrador |
 
-La administración de cursos permite crear, listar, editar e inactivar cursos. Las operaciones requieren un JWT de Administrador.
+La administración de cursos permite crear, listar, editar y desactivar cursos. La administración de usuarios permite al Administrador asignar o quitar el rol Docente a un usuario. Las operaciones requieren un JWT de Administrador. El registro público crea cuentas con rol Estudiante; el rol Docente solo puede otorgarse desde el panel de Administrador vía `PATCH /api/usuarios/:id/rol`.
+
+El endpoint de login está protegido con un límite de 20 intentos por dirección IP cada 15 minutos. El JWT se firma con el nombre del rol y tiene una vigencia de 8 horas; si un Administrador cambia el rol de un usuario, ese usuario ve el rol actualizado la próxima vez que carga la aplicación (el frontend refresca el perfil desde la API).
 
 ### Usuario administrador de desarrollo
 

@@ -1,28 +1,18 @@
 const authService = require('../services/authService')
+const { asyncHandler } = require('../middlewares/errorMiddleware')
 
-const register = async (req, res) => {
-  try 
-  {
+const register = asyncHandler(async (req, res) => {
     const usuario = await authService.registrarUsuario(req.body);
-    res.status(201).json(usuario);  
-  } catch (error) 
-  {
-    res.status(400).json({message : error.message})
-  }
-};
+    res.status(201).json(usuario);
+});
 
-const login = async(req, res) => {
-  try{
-    const {email, password} = req.body;
+const login = asyncHandler(async (req, res) => {
+    const { email, password } = req.body;
     const resultado = await authService.login(email, password);
     res.status(200).json(resultado);
-  } catch (error)
-  {
-    res.status(400).json({message : error.message});
-  }
-};
+});
 
 module.exports = {
-  register,
-  login,
+    register,
+    login,
 };

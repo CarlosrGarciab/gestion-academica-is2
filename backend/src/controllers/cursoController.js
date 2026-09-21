@@ -1,106 +1,54 @@
 const cursoService = require("../services/cursoService");
+const { asyncHandler } = require("../middlewares/errorMiddleware");
 
-const listarCursos = async (req, res) => {
-    try {
-        const cursos = await cursoService.listarCursos();
+const listarCursos = asyncHandler(async (req, res) => {
+    const cursos = await cursoService.listarCursos();
+    res.json(cursos);
+});
 
-        res.json(cursos);
+const crearCurso = asyncHandler(async (req, res) => {
+    const {
+        nombre,
+        descripcion,
+        area_conocimiento
+    } = req.body;
 
-    } catch (error) {
-        console.error(error);
+    const curso = await cursoService.crearCurso(
+        req.user.id,
+        nombre,
+        descripcion,
+        area_conocimiento
+    );
 
-        res.status(500).json({
-            message: "Error al obtener los cursos"
-        });
-    }
-};
+    res.status(201).json(curso);
+});
 
-const crearCurso = async (req, res) => {
-    try {
-        const {
-            nombre,
-            descripcion,
-            area_conocimiento
-        } = req.body;
+const editarCurso = asyncHandler(async (req, res) => {
+    const { id } = req.params;
 
-        const curso = await cursoService.crearCurso(
-            req.user.id,
-            nombre,
-            descripcion,
-            area_conocimiento
-        );
+    const {
+        nombre,
+        descripcion,
+        area_conocimiento
+    } = req.body;
 
-        res.status(201).json(curso);
+    const curso = await cursoService.editarCurso(
+        id,
+        nombre,
+        descripcion,
+        area_conocimiento
+    );
 
-    } catch (error) {
-        console.error(error);
+    res.json(curso);
+});
 
-        res.status(400).json({
-            message: error.message
-        });
-    }
-};
+const cambiarEstadoCurso = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const { activo } = req.body;
 
-const editarCurso = async (req, res) => {
-    try {
-        const { id } = req.params;
-
-        const {
-            nombre,
-            descripcion,
-            area_conocimiento
-        } = req.body;
-
-        const curso = await cursoService.editarCurso(
-            id,
-            nombre,
-            descripcion,
-            area_conocimiento
-        );
-
-        if (!curso) {
-            return res.status(404).json({
-                message: "Curso no encontrado"
-            });
-        }
-
-        res.json(curso);
-
-    } catch (error) {
-        console.error(error);
-
-        res.status(400).json({
-            message: error.message
-        });
-    }
-};
-
-const cambiarEstadoCurso = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const { activo } = req.body;
-
-        const curso = await cursoService.cambiarEstadoCurso(
-            id,
-            activo
-        );
-
-        if (!curso) {
-            return res.status(404).json({
-                message: "Curso no encontrado"
-            });
-        }
-
-        res.json(curso);
-
-    } catch (error) {
-        console.error(error);
-
-        res.status(500).json({
-            message: "Error al cambiar el estado del curso"
-        });
-    }
-};
+    const curso = await cursoService.cambiarEstadoCurso(id, activo);
+    res.json(curso);
+});
 
 module.exports = {
     listarCursos,
