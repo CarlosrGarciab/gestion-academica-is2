@@ -25,10 +25,11 @@ backend/src/
 │   ├── usuarioRoutes.js
 │   └── cursoRoutes.js
 ├── middlewares/        # Autenticación (JWT), autorización por rol, manejo de errores
-│   └── authMiddleware.js
-├── utils/              # Funciones auxiliares o helpers compartidos
+│   ├── authMiddleware.js
+│   └── errorMiddleware.js
 ├── app.js              # Configuración de Express (middlewares globales, rutas)
-└── server.js           # Punto de entrada / arranque del servidor
+├── scripts/            # Scripts de mantenimiento (p. ej. crear administrador)
+└── test/               # Tests con el runner nativo de Node (node --test)
 ```
 
 ## Convención de nombres

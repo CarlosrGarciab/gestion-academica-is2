@@ -6,5 +6,6 @@ router.get('/usuarios/activos', verifyToken, requireRole('Administrador'), usuar
 router.get('/usuarios/:id', verifyToken, usuarioController.getById);
 router.put('/usuarios/:id', verifyToken, usuarioController.actualizar);
 router.patch('/usuarios/:id/activo', verifyToken, requireRole('Administrador'), usuarioController.cambiarActivo);
+router.patch('/usuarios/:id/rol', verifyToken, requireRole('Administrador'), usuarioController.cambiarRol);
 
 module.exports = router;

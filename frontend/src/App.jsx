@@ -17,10 +17,12 @@ function App() {
     nombre: '',
     apellido: '',
     email: '',
-    idRol: '1',
     password: ''
   })
   const [registerMessage, setRegisterMessage] = useState(null)
+  const [users, setUsers] = useState([])
+  const [usersLoading, setUsersLoading] = useState(false)
+  const [userMessage, setUserMessage] = useState(null)
   const [courses, setCourses] = useState([])
   const [courseData, setCourseData] = useState({ nombre: '', descripcion: '', area_conocimiento: '' })
   const [courseMessage, setCourseMessage] = useState(null)
@@ -42,29 +44,87 @@ function App() {
   })
 
   useEffect(() => {
+    const session = JSON.parse(sessionStorage.getItem('ccgb_session'))
+    if (!session?.token) {
+      return
+    }
+
+    const refreshUser = async () => {
+      try {
+        const response = await fetch(`${apiUrl}/api/usuarios/${session.usuario.id}`, {
+          headers: { Authorization: `Bearer ${session.token}` }
+        })
+        if (!response.ok) return
+        const fresh = await response.json()
+        const updated = { token: session.token, usuario: { ...session.usuario, ...fresh } }
+        sessionStorage.setItem('ccgb_session', JSON.stringify(updated))
+        setAuthUser(updated.usuario)
+      } catch {
+        // refresco silencioso: se conserva la sesion actual
+      }
+    }
+
+    refreshUser()
+  }, [apiUrl])
+
+  useEffect(() => {
     if (authUser?.idRol !== 3) {
       return
     }
 
-    const loadCourses = async () => {
+    const loadAdminData = async () => {
       setCoursesLoading(true)
+      setUsersLoading(true)
       try {
         const session = JSON.parse(sessionStorage.getItem('ccgb_session'))
-        const response = await fetch(`${apiUrl}/api/cursos`, {
-          headers: { Authorization: `Bearer ${session?.token}` }
-        })
-        const result = await response.json()
-        if (!response.ok) throw new Error(result.message || 'No se pudieron cargar los cursos')
-        setCourses(result)
+        const [coursesResponse, usersResponse] = await Promise.all([
+          fetch(`${apiUrl}/api/cursos`, { headers: { Authorization: `Bearer ${session?.token}` } }),
+          fetch(`${apiUrl}/api/usuarios/activos`, { headers: { Authorization: `Bearer ${session?.token}` } })
+        ])
+        const [coursesResult, usersResult] = await Promise.all([
+          coursesResponse.json(),
+          usersResponse.json()
+        ])
+        if (!coursesResponse.ok) throw new Error(coursesResult.message || 'No se pudieron cargar los cursos')
+        if (!usersResponse.ok) throw new Error(usersResult.message || 'No se pudieron cargar los usuarios')
+        setCourses(coursesResult)
+        setUsers(usersResult)
       } catch (error) {
         setCourseMessage({ type: 'error', text: error.message })
+        setUserMessage({ type: 'error', text: error.message })
       } finally {
         setCoursesLoading(false)
+        setUsersLoading(false)
       }
     }
 
-    loadCourses()
+    loadAdminData()
   }, [apiUrl, authUser?.idRol])
+
+
+  const handleChangeRole = async (user, idRol) => {
+    if (idRol === 1 && !window.confirm(`¿Quitar el rol docente a ${user.nombre} ${user.apellido}?`)) {
+      return
+    }
+
+    try {
+      const session = JSON.parse(sessionStorage.getItem('ccgb_session'))
+      const response = await fetch(`${apiUrl}/api/usuarios/${user.id}/rol`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session?.token}`
+        },
+        body: JSON.stringify({ idRol })
+      })
+      const result = await response.json()
+      if (!response.ok) throw new Error(result.message || 'No se pudo cambiar el rol')
+      setUsers((current) => current.map((item) => item.id === result.id ? result : item))
+      setUserMessage({ type: 'success', text: `Rol actualizado a ${roleLabels[result.idRol] || 'Usuario'}.` })
+    } catch (error) {
+      setUserMessage({ type: 'error', text: error.message })
+    }
+  }
 
   const handleRegisterChange = (event) => {
     const { name, value } = event.target
@@ -79,13 +139,13 @@ function App() {
       const response = await fetch(`${apiUrl}/api/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...registerData, idRol: Number(registerData.idRol) })
+        body: JSON.stringify(registerData)
       })
       const result = await response.json()
 
       if (!response.ok) throw new Error(result.message || 'No se pudo completar el registro')
 
-      setRegisterData({ nombre: '', apellido: '', email: '', idRol: '1', password: '' })
+      setRegisterData({ nombre: '', apellido: '', email: '', password: '' })
       setRegisterMessage({ type: 'success', text: 'Registro completado. Ya puedes iniciar sesión.' })
     } catch (error) {
       setRegisterMessage({ type: 'error', text: error.message })
@@ -181,6 +241,10 @@ function App() {
   }
 
   const handleToggleCourse = async (course) => {
+    if (course.activo && !window.confirm(`¿Desactivar el curso "${course.nombre}"?`)) {
+      return
+    }
+
     try {
       const session = JSON.parse(sessionStorage.getItem('ccgb_session'))
       const response = await fetch(`${apiUrl}/api/cursos/${course.id}/activo`, {
@@ -235,13 +299,43 @@ function App() {
           <section className="role-panel" id="panel">
           <div>
             <p className="eyebrow">PANEL PERSONAL</p>
-            <h2>Hola, {authUser.nombre}</h2>
+            <h2>Hola, {authUser.nombre} {authUser.apellido || ''}</h2>
             <p className="intro-copy">Ingresaste como {roleLabels[authUser.idRol] || 'Usuario'}.</p>
           </div>
           <button className="register-button" type="button" onClick={handleLogout}>Cerrar sesión</button>
           </section>
           {authUser.idRol === 3 && (
-            <section className="courses-panel" id="cursos">
+            <>
+              <section className="courses-panel" id="usuarios">
+                <div className="section-heading">
+                  <div>
+                    <p className="eyebrow">USUARIOS</p>
+                    <h2>Administración de usuarios</h2>
+                  </div>
+                </div>
+                {userMessage && <p className={`form-message ${userMessage.type}`} role="status">{userMessage.text}</p>}
+                <div className="course-table-wrap">
+                  {usersLoading ? <p className="empty-state">Cargando usuarios...</p> : users.length === 0 ? <p className="empty-state">Todavía no hay usuarios activos.</p> : (
+                    <table className="course-table">
+                      <thead><tr><th>Nombre</th><th>Apellido</th><th>Email</th><th>Rol</th><th>Acciones</th></tr></thead>
+                      <tbody>{users.map((user) => (
+                        <tr key={user.id}>
+                          <td>{user.nombre}</td><td>{user.apellido}</td><td>{user.email}</td>
+                          <td><span className={`course-state ${user.idRol === 3 ? 'active' : user.idRol === 2 ? 'inactive' : ''}`}>{roleLabels[user.idRol] || 'Usuario'}</span></td>
+                          <td className="course-actions">
+                            {user.idRol === 3
+                              ? <span className="empty-state">—</span>
+                              : user.idRol === 2
+                                ? <button type="button" onClick={() => handleChangeRole(user, 1)}>Quitar rol docente</button>
+                                : <button type="button" onClick={() => handleChangeRole(user, 2)}>Hacer docente</button>}
+                          </td>
+                        </tr>
+                      ))}</tbody>
+                    </table>
+                  )}
+                </div>
+              </section>
+              <section className="courses-panel" id="cursos">
               <div className="section-heading">
                 <div>
                   <p className="eyebrow">OFERTA EDUCATIVA</p>
@@ -276,7 +370,8 @@ function App() {
                   </table>
                 )}
               </div>
-            </section>
+              </section>
+            </>
           )}
         </>
       ) : (
@@ -307,7 +402,6 @@ function App() {
           <label>Nombre<input name="nombre" value={registerData.nombre} onChange={handleRegisterChange} required /></label>
           <label>Apellido<input name="apellido" value={registerData.apellido} onChange={handleRegisterChange} required /></label>
           <label>Email<input name="email" type="email" value={registerData.email} onChange={handleRegisterChange} required /></label>
-          <label>Rol<select name="idRol" value={registerData.idRol} onChange={handleRegisterChange}><option value="1">Estudiante</option><option value="2">Docente</option></select></label>
           <label>Contraseña<input name="password" type="password" minLength="8" pattern="(?=.*[A-Za-z])(?=.*\d).{8,}" title="Usa al menos 8 caracteres, una letra y un numero" value={registerData.password} onChange={handleRegisterChange} required /></label>
           <button className="register-button" type="submit">Crear cuenta</button>
         </form>

@@ -20,12 +20,27 @@ const buscarPorEmail = async (email) =>
     return rows[0];
 }
 
-const buscarIdRolPublico = async (idRol) =>
+const buscarIdRolAsignable = async (idRol) =>
 {
     const {rows} = await pool.query(
         "SELECT id_rol FROM ROL WHERE ID_ROL = $1 AND NOMBRE IN ('Estudiante', 'Docente') AND ACTIVO = TRUE",
         [idRol])
     return rows[0]?.id_rol;
+}
+
+const actualizarRol = async (id, idRol) =>
+{
+    const {rows} = await pool.query (
+        'UPDATE USUARIO SET ID_ROL = $1 WHERE ID = $2 RETURNING *', [idRol, id]
+    );
+    return rows[0];
+}
+
+const buscarNombreRol = async (idRol) =>
+{
+    const {rows} = await pool.query(
+        'SELECT nombre FROM ROL WHERE ID_ROL = $1', [idRol])
+    return rows[0]?.nombre;
 }
 
 const crearUsuario = async ({nombre, apellido, email, password_hash, id_rol}) =>
@@ -56,4 +71,4 @@ const actualizarUsuario = async (id, {nombre, apellido, email}) =>
 }
  
 
-module.exports = {buscarPorId, listarUsuariosActivos, crearUsuario, cambiarActivo, actualizarUsuario, buscarPorEmail, buscarIdRolPublico}
+module.exports = {buscarPorId, listarUsuariosActivos, crearUsuario, cambiarActivo, actualizarUsuario, actualizarRol, buscarPorEmail, buscarIdRolAsignable, buscarNombreRol}

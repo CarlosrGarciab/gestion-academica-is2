@@ -2,16 +2,27 @@ require('dotenv').config();
 
 const express = require('express');
 const cors = require('cors');
+const rateLimit = require('express-rate-limit');
 const pool = require('./config/db');
 const authRoutes = require('./routes/authRoutes');
 const usuarioRoutes = require('./routes/usuarioRoutes');
 const cursoRoutes = require('./routes/cursoRoutes');
+const { errorHandler } = require('./middlewares/errorMiddleware');
 
 const app = express();
 const port = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json());
+
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 20,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: { message: 'Demasiados intentos de inicio de sesion. Intente mas tarde.' },
+});
+app.use('/api/auth/login', loginLimiter);
 
 app.use('/api', authRoutes);
 app.use('/api', usuarioRoutes);
@@ -34,6 +45,8 @@ app.get('/health/db', async (req, res) => {
     res.status(503).json({ status: 'error', message: 'Base de datos no disponible' });
   }
 });
+
+app.use(errorHandler);
 
 if (require.main === module) {
   app.listen(port, () => {
