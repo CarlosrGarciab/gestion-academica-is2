@@ -14,6 +14,14 @@ const listarCursos = async () => {
     return cursos.map(toDTO);
 };
 
+const obtenerPorId = async (id) => {
+    const curso = await cursoModel.buscarPorId(id);
+    if (!curso) {
+        throw new ApiError(404, "Curso no encontrado");
+    }
+    return toDTO(curso);
+};
+
 const crearCurso = async (
     idUsuario,
     nombre,
@@ -88,6 +96,7 @@ const cambiarEstadoCurso = async (id, activo) => {
 
 module.exports = {
     listarCursos,
+    obtenerPorId,
     crearCurso,
     editarCurso,
     cambiarEstadoCurso

@@ -23,7 +23,7 @@ const buscarPorEmail = async (email) =>
 const buscarIdRolAsignable = async (idRol) =>
 {
     const {rows} = await pool.query(
-        "SELECT id_rol FROM ROL WHERE ID_ROL = $1 AND NOMBRE IN ('Estudiante', 'Docente') AND ACTIVO = TRUE",
+        "SELECT id_rol FROM ROL WHERE ID_ROL = $1 AND NOMBRE IN ('Estudiante', 'Docente', 'Administrador') AND ACTIVO = TRUE",
         [idRol])
     return rows[0]?.id_rol;
 }

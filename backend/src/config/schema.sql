@@ -30,3 +30,20 @@ CREATE TABLE IF NOT EXISTS curso (
     area_conocimiento VARCHAR(100) NOT NULL,
     activo BOOLEAN DEFAULT TRUE
 );
+
+CREATE TABLE IF NOT EXISTS cohorte (
+    id SERIAL PRIMARY KEY,
+    id_curso INT NOT NULL REFERENCES curso(id),
+    id_docente INT NOT NULL REFERENCES usuario(id),
+    nombre VARCHAR(150),
+    fecha_inicio DATE NOT NULL,
+    fecha_fin DATE NOT NULL,
+    modalidad VARCHAR(20) NOT NULL CHECK (modalidad IN ('presencial', 'virtual', 'hibrida')),
+    cupo_fisico INT CHECK (cupo_fisico IS NULL OR cupo_fisico > 0),
+    link_acceso VARCHAR(255),
+    costo_inscripcion NUMERIC(10,2) NOT NULL CHECK (costo_inscripcion > 0),
+    costo_cuota_mensual NUMERIC(10,2) NOT NULL CHECK (costo_cuota_mensual > 0),
+    tarifa_hora_docente NUMERIC(10,2) NOT NULL CHECK (tarifa_hora_docente > 0),
+    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    activo BOOLEAN DEFAULT TRUE
+);

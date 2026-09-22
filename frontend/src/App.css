@@ -47,6 +47,42 @@ h1 { max-width: 700px; margin: 18px 0 20px; color: var(--ink); font-family: Geor
 .course-actions button + button { margin-left: 8px; }
 .course-actions button:hover, .course-actions button:focus, .course-actions button:active { color: var(--coral); outline: 0; }
 .empty-state { padding: 24px 0; color: var(--muted); font-size: 13px; }
+.user-filters { margin-top: 24px; }
+.user-summary { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.user-summary button { padding: 6px 12px; border: 1px solid var(--line); color: var(--muted); background: var(--paper); font: inherit; font-size: 11px; font-weight: 800; letter-spacing: .06em; cursor: pointer; }
+.user-summary button.active { color: var(--paper); background: var(--ink); border-color: var(--ink); }
+.user-summary button:hover { color: var(--ink); border-color: var(--ink); }
+.user-cell { display: flex; align-items: center; gap: 10px; }
+.user-avatar { display: grid; place-items: center; width: 34px; height: 34px; flex: none; border-radius: 50%; color: var(--sage-dark); background: var(--sage-light); font-size: 12px; font-weight: 800; }
+.role-badge { display: inline-block; padding: 5px 10px; border-radius: 999px; font-size: 11px; font-weight: 800; white-space: nowrap; }
+.role-badge.badge-1 { color: var(--muted); background: #efede6; }
+.role-badge.badge-2 { color: var(--sage-dark); background: var(--sage-light); }
+.role-badge.badge-3 { color: #92510c; background: #f7e7cd; }
+.user-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; white-space: nowrap; }
+.role-select { min-height: 36px; border: 1px solid var(--line); padding: 0 10px; color: var(--ink); background: var(--paper); font: inherit; font-size: 13px; cursor: pointer; }
+.role-select:focus { outline: 2px solid var(--coral); outline-offset: 1px; }
+.role-modal-overlay { position: fixed; inset: 0; z-index: 10; display: grid; place-items: center; padding: 24px; background: rgba(25, 37, 34, .45); }
+.role-modal { width: min(440px, 100%); padding: 28px; border: 1px solid var(--line); background: var(--paper); box-shadow: 0 24px 48px rgba(25, 37, 34, .28); }
+.role-modal .eyebrow { margin-bottom: 6px; }
+.role-modal h3 { margin: 0 0 10px; color: var(--ink); font-family: Georgia, serif; font-size: 24px; font-weight: 400; }
+.role-modal p { margin: 0 0 24px; color: var(--muted); font-size: 14px; line-height: 1.5; }
+.role-modal-actions { display: flex; justify-content: flex-end; gap: 12px; }
+.register-button.confirm-remove { color: var(--paper); background: #a33d2d; }
+.cohort-filters { grid-template-columns: minmax(220px, 1fr); }
+.course-form input[type="number"] { appearance: none; -moz-appearance: textfield; }
+.course-form input[type="number"]::-webkit-outer-spin-button,
+.course-form input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.home-cta { display: flex; align-items: center; gap: 12px; }
+.auth-switch { margin-top: 18px; color: var(--muted); font-size: 13px; }
+.auth-switch a { color: var(--coral); font-weight: 700; }
+.section-heading-side { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.back-link { display: inline-flex; align-items: center; text-decoration: none; }
+.admin-nav { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; padding: 0 0 76px; }
+.admin-card { display: grid; gap: 8px; align-content: start; padding: 22px; border: 1px solid var(--line); background: var(--paper); text-decoration: none; cursor: pointer; }
+.admin-card strong { color: var(--ink); font-family: Georgia, serif; font-size: 21px; font-weight: 400; }
+.admin-card-desc { color: var(--muted); font-size: 13px; }
+.admin-card:hover { border-color: var(--coral); }
+.admin-card:focus-visible { outline: 2px solid var(--coral); outline-offset: 2px; }
 .register-form { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px 20px; padding-top: 12px; }
 .register-form label { display: grid; gap: 7px; color: var(--muted); font-size: 12px; }
 .register-form input, .register-form select { min-height: 42px; border: 1px solid var(--line); padding: 0 12px; color: var(--ink); background: var(--paper); font: inherit; }
@@ -62,4 +98,4 @@ h2 { margin: 8px 0 0; color: var(--ink); font-family: Georgia, serif; font-size:
 .course-state.inactive { color: #a33d2d; background: #f8dfd9; }
 footer { display: flex; justify-content: space-between; padding: 22px 0 35px; border-top: 1px solid var(--line); color: var(--muted); font-size: 11px; letter-spacing: .05em; }
 footer span:first-child { color: var(--ink); font-weight: 800; }
-@media (max-width: 700px) { .intro { display: block; padding: 60px 0 50px; } .section-heading { align-items: start; flex-direction: column; } .login-panel, .role-panel { display: block; } .login-form { grid-template-columns: 1fr; margin-top: 24px; } .login-form .register-button { grid-column: 1; } .course-form, .course-filters { grid-template-columns: 1fr; } .course-description, .course-form-actions { grid-column: 1; } .register-form { grid-template-columns: 1fr; } .register-button { grid-column: 1; } footer { gap: 12px; flex-wrap: wrap; } }
+@media (max-width: 700px) { .intro { display: block; padding: 60px 0 50px; } .section-heading { align-items: start; flex-direction: column; } .login-panel, .role-panel { display: block; } .login-form { grid-template-columns: 1fr; margin-top: 24px; } .login-form .register-button { grid-column: 1; } .course-form, .course-filters { grid-template-columns: 1fr; } .course-description, .course-form-actions { grid-column: 1; } .register-form { grid-template-columns: 1fr; } .register-button { grid-column: 1; } .home-cta { flex-direction: column; align-items: flex-start; } .admin-nav { grid-template-columns: 1fr; } footer { gap: 12px; flex-wrap: wrap; } }

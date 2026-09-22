@@ -120,8 +120,10 @@ Endpoints disponibles:
 | `POST` | `/api/cursos` | JWT + Administrador |
 | `PUT` | `/api/cursos/:id` | JWT + Administrador |
 | `PATCH` | `/api/cursos/:id/activo` | JWT + Administrador |
+| `GET` | `/api/cohortes` | JWT + Administrador |
+| `POST` | `/api/cohortes` | JWT + Administrador |
 
-La administración de cursos permite crear, listar, editar y desactivar cursos. La administración de usuarios permite al Administrador asignar o quitar el rol Docente a un usuario. Las operaciones requieren un JWT de Administrador. El registro público crea cuentas con rol Estudiante; el rol Docente solo puede otorgarse desde el panel de Administrador vía `PATCH /api/usuarios/:id/rol`.
+La administración de cursos permite crear, listar, editar y desactivar cursos. La administración de usuarios permite al Administrador asignar o quitar los roles Docente y Administrador a un usuario. Las operaciones requieren un JWT de Administrador. El registro público crea cuentas con rol Estudiante; el rol Docente solo puede otorgarse desde el panel de Administrador vía `PATCH /api/usuarios/:id/rol`.
 
 El endpoint de login está protegido con un límite de 20 intentos por dirección IP cada 15 minutos. El JWT se firma con el nombre del rol y tiene una vigencia de 8 horas; si un Administrador cambia el rol de un usuario, ese usuario ve el rol actualizado la próxima vez que carga la aplicación (el frontend refresca el perfil desde la API).
 

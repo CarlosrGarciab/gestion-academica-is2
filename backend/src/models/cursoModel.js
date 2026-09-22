@@ -1,5 +1,14 @@
 const pool = require("../config/db");
 
+const buscarPorId = async (id) => {
+    const resultado = await pool.query(
+        "SELECT * FROM curso WHERE id = $1",
+        [id]
+    );
+
+    return resultado.rows[0];
+};
+
 const obtenerCursos = async () => {
     const resultado = await pool.query(
         "SELECT * FROM curso ORDER BY id"
@@ -60,5 +69,6 @@ module.exports = {
     obtenerCursos,
     crearCurso,
     editarCurso,
-    cambiarEstadoCurso
+    cambiarEstadoCurso,
+    buscarPorId
 };

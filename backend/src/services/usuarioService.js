@@ -48,7 +48,11 @@ const actualizarUsuario = async (id, { nombre, apellido, email }) => {
     return toDTO(actualizado);
 };
 
-const cambiarRol = async (id, idRol) => {
+const cambiarRol = async (id, idRol, actorId) => {
+    if (actorId && Number(id) === Number(actorId)) {
+        throw new ApiError(400, 'No puede cambiarse el rol a sí mismo');
+    }
+
     const idRolAsignable = await usuarioModel.buscarIdRolAsignable(Number(idRol));
     if (!idRolAsignable) {
         throw new ApiError(400, 'El rol no esta disponible para asignacion');

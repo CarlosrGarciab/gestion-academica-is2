@@ -30,14 +30,37 @@ test('cambiarRol asigna un rol Editable (Docente o Estudiante)', async () => {
   }
 });
 
-test('cambiarRol rechaza el rol Administrador', async () => {
+test('cambiarRol permite asignar el rol Administrador', async () => {
   const originalBuscarIdRolAsignable = usuarioModel.buscarIdRolAsignable;
-  usuarioModel.buscarIdRolAsignable = async () => undefined;
+  const originalActualizarRol = usuarioModel.actualizarRol;
+
+  usuarioModel.buscarIdRolAsignable = async (idRol) => idRol;
+  usuarioModel.actualizarRol = async (id, idRol) => ({
+    id: Number(id),
+    nombre: 'Ana',
+    apellido: 'Prueba',
+    email: 'ana@example.com',
+    id_rol: idRol,
+    activo: true,
+  });
+
+  try {
+    const admin = await usuarioService.cambiarRol(7, 3);
+    assert.equal(admin.idRol, 3);
+  } finally {
+    usuarioModel.buscarIdRolAsignable = originalBuscarIdRolAsignable;
+    usuarioModel.actualizarRol = originalActualizarRol;
+  }
+});
+
+test('cambiarRol impide que el admin cambie su propio rol', async () => {
+  const originalBuscarIdRolAsignable = usuarioModel.buscarIdRolAsignable;
+  usuarioModel.buscarIdRolAsignable = async (idRol) => idRol;
 
   try {
     await assert.rejects(
-      usuarioService.cambiarRol(7, 3),
-      { message: 'El rol no esta disponible para asignacion' }
+      usuarioService.cambiarRol(5, 1, 5),
+      { message: 'No puede cambiarse el rol a sí mismo' }
     );
   } finally {
     usuarioModel.buscarIdRolAsignable = originalBuscarIdRolAsignable;

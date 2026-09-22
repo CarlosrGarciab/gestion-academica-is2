@@ -34,7 +34,7 @@ const cambiarActivo = asyncHandler(async (req, res) => {
 
 const cambiarRol = asyncHandler(async (req, res) => {
     const { idRol } = req.body;
-    const usuario = await usuarioService.cambiarRol(req.params.id, idRol);
+    const usuario = await usuarioService.cambiarRol(req.params.id, idRol, req.user.id);
     res.status(200).json(usuario);
 });
 
