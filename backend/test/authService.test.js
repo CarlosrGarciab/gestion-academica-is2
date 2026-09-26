@@ -100,7 +100,7 @@ test('login usa el mismo mensaje para un email inexistente', async () => {
   try {
     await assert.rejects(
       authService.login('missing@example.com', 'Password123'),
-      { message: 'Credenciales invalidas' }
+      { message: 'Credenciales inválidas' }
     );
   } finally {
     usuarioModel.buscarPorEmail = originalBuscarPorEmail;

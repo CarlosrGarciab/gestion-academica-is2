@@ -8,6 +8,7 @@ const authRoutes = require('./routes/authRoutes');
 const usuarioRoutes = require('./routes/usuarioRoutes');
 const cursoRoutes = require('./routes/cursoRoutes');
 const cohorteRoutes = require('./routes/cohorteRoutes');
+const inscripcionRoutes = require('./routes/inscripcionRoutes');
 const { errorHandler } = require('./middlewares/errorMiddleware');
 
 const app = express();
@@ -21,7 +22,7 @@ const loginLimiter = rateLimit({
   limit: 20,
   standardHeaders: 'draft-7',
   legacyHeaders: false,
-  message: { message: 'Demasiados intentos de inicio de sesion. Intente mas tarde.' },
+  message: { message: 'Demasiados intentos de inicio de sesión. Intente más tarde.' },
 });
 app.use('/api/auth/login', loginLimiter);
 
@@ -29,9 +30,10 @@ app.use('/api', authRoutes);
 app.use('/api', usuarioRoutes);
 app.use('/api', cursoRoutes);
 app.use('/api', cohorteRoutes);
+app.use('/api', inscripcionRoutes);
 
 app.get('/', (req, res) => {
-  res.json({ mensaje: 'API Gestion Academica CCGB ejecutandose correctamente' });
+  res.json({ mensaje: 'API Gestión Académica CCGB ejecutándose correctamente' });
 });
 
 app.get('/health', (req, res) => {

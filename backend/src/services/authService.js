@@ -52,12 +52,12 @@ const login = async (email, password) => {
 
   const usuario = await usuarioModel.buscarPorEmail(normalizarEmail(email));
   if (!usuario) {
-    throw new ApiError(401, 'Credenciales invalidas');
+    throw new ApiError(401, 'Credenciales inválidas');
   }
 
   const passwordValida = await bcrypt.compare(password, usuario.password_hash);
   if (!passwordValida) {
-    throw new ApiError(401, 'Credenciales invalidas');
+    throw new ApiError(401, 'Credenciales inválidas');
   }
 
   if (!usuario.activo) {

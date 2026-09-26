@@ -47,3 +47,14 @@ CREATE TABLE IF NOT EXISTS cohorte (
     fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     activo BOOLEAN DEFAULT TRUE
 );
+
+CREATE TABLE IF NOT EXISTS inscripcion (
+    id SERIAL PRIMARY KEY,
+    id_estudiante INT NOT NULL REFERENCES usuario(id),
+    id_cohorte INT NOT NULL REFERENCES cohorte(id),
+    estado VARCHAR(20) NOT NULL DEFAULT 'pendiente'
+        CHECK (estado IN ('pendiente', 'confirmada', 'rechazada', 'cancelada')),
+    fecha_solicitud TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    fecha_confirmacion TIMESTAMP,
+    UNIQUE (id_estudiante, id_cohorte)
+);

@@ -52,6 +52,12 @@ function App() {
   const [userSearch, setUserSearch] = useState('')
   const [roleModal, setRoleModal] = useState(null)
   const [userRoleFilter, setUserRoleFilter] = useState('all')
+  const [catalogCohorts, setCatalogCohorts] = useState([])
+  const [catalogLoading, setCatalogLoading] = useState(false)
+  const [catalogMessage, setCatalogMessage] = useState(null)
+  const [catalogSearch, setCatalogSearch] = useState('')
+  const [myInscripciones, setMyInscripciones] = useState([])
+  const [enrollingId, setEnrollingId] = useState(null)
 
   const roleLabels = { 1: 'Estudiante', 2: 'Docente', 3: 'Administrador' }
   const modalidadLabels = { presencial: 'Presencial', virtual: 'Virtual', hibrida: 'Híbrida' }
@@ -79,6 +85,15 @@ function App() {
       || (courseStatus === 'active' && course.activo)
       || (courseStatus === 'inactive' && !course.activo)
     return matchesSearch && matchesStatus
+  })
+  const misIdsCohorteActivos = new Set(
+    myInscripciones
+      .filter((inscripcion) => inscripcion.estado === 'pendiente' || inscripcion.estado === 'confirmada')
+      .map((inscripcion) => inscripcion.idCohorte)
+  )
+  const visibleCatalogCohorts = catalogCohorts.filter((cohorte) => {
+    const search = catalogSearch.trim().toLowerCase()
+    return !search || `${cohorte.cursoNombre} ${cohorte.docenteNombre} ${cohorte.docenteApellido} ${cohorte.nombre} ${modalidadLabels[cohorte.modalidad] || cohorte.modalidad}`.toLowerCase().includes(search)
   })
 
   useEffect(() => {
@@ -164,6 +179,37 @@ function App() {
     }
 
     loadAdminData()
+  }, [apiUrl, authUser?.idRol])
+
+  useEffect(() => {
+    if (authUser?.idRol !== 1) {
+      return
+    }
+
+    const loadCatalog = async () => {
+      setCatalogLoading(true)
+      try {
+        const session = JSON.parse(sessionStorage.getItem('ccgb_session'))
+        const [catalogResponse, mineResponse] = await Promise.all([
+          fetch(`${apiUrl}/api/cohortes/disponibilidad`, { headers: { Authorization: `Bearer ${session?.token}` } }),
+          fetch(`${apiUrl}/api/inscripciones/mias`, { headers: { Authorization: `Bearer ${session?.token}` } })
+        ])
+        const [catalogResult, mineResult] = await Promise.all([
+          catalogResponse.json(),
+          mineResponse.json()
+        ])
+        if (!catalogResponse.ok) throw new Error(catalogResult.message || 'No se pudo cargar el catálogo de cohortes')
+        if (!mineResponse.ok) throw new Error(mineResult.message || 'No se pudieron cargar tus inscripciones')
+        setCatalogCohorts(catalogResult)
+        setMyInscripciones(mineResult)
+      } catch (error) {
+        setCatalogMessage({ type: 'error', text: error.message })
+      } finally {
+        setCatalogLoading(false)
+      }
+    }
+
+    loadCatalog()
   }, [apiUrl, authUser?.idRol])
 
 
@@ -382,9 +428,57 @@ function App() {
     }
   }
 
+  const handleEnroll = async (cohorte) => {
+    setCatalogMessage(null)
+    setEnrollingId(cohorte.id)
+
+    try {
+      const session = JSON.parse(sessionStorage.getItem('ccgb_session'))
+      const response = await fetch(`${apiUrl}/api/inscripciones`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session?.token}`
+        },
+        body: JSON.stringify({ idCohorte: cohorte.id })
+      })
+      const result = await response.json()
+      if (!response.ok) throw new Error(result.message || 'No se pudo completar la inscripción')
+
+      setMyInscripciones((current) => [...current, result])
+      setCatalogCohorts((current) => current.map((item) => item.id === cohorte.id
+        ? {
+            ...item,
+            cuposOcupados: item.cuposOcupados + 1,
+            cuposDisponibles: item.cuposDisponibles === null ? null : item.cuposDisponibles - 1,
+            estadoDisponibilidad: item.cuposDisponibles !== null && item.cuposDisponibles - 1 <= 0
+              ? 'Cupo Agotado'
+              : item.estadoDisponibilidad
+          }
+        : item))
+      setCatalogMessage({ type: 'success', text: `Te inscribiste a "${cohorte.nombre || cohorte.cursoNombre}". Tu inscripción quedó pendiente de pago.` })
+    } catch (error) {
+      setCatalogMessage({ type: 'error', text: error.message })
+    } finally {
+      setEnrollingId(null)
+    }
+  }
+
   const formatMoney = (value) => {
     return new Intl.NumberFormat('es-PY', { style: 'currency', currency: 'PYG', maximumFractionDigits: 0 }).format(Number(value))
   }
+
+  const formatFecha = (value) => {
+  if (!value) return '—'
+  const fecha = new Date(value)
+  if (Number.isNaN(fecha.getTime())) return '—'
+  return new Intl.DateTimeFormat('es-PY', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    timeZone: 'UTC'
+  }).format(fecha)
+}
 
   const roleModalData = roleModal && (() => {
     const { user, idRol } = roleModal
@@ -587,6 +681,56 @@ function App() {
               </section>
               )}
             </>
+          ) : authUser.idRol === 1 && route === 'catalogo' ? (
+            <section className="courses-panel" id="catalogo">
+              <div className="section-heading">
+                <div>
+                  <p className="eyebrow">CATÁLOGO</p>
+                  <h2>Cohortes disponibles</h2>
+                </div>
+                <a className="secondary-button back-link" href="#panel">Volver al panel</a>
+              </div>
+              {catalogMessage && <p className={`form-message ${catalogMessage.type}`} role="status">{catalogMessage.text}</p>}
+              <div className="course-filters cohort-filters">
+                <label>Buscar cohorte<input value={catalogSearch} onChange={(event) => setCatalogSearch(event.target.value)} placeholder="Curso, docente o nombre" /></label>
+              </div>
+              <div className="course-table-wrap">
+                {catalogLoading ? <p className="empty-state">Cargando cohortes...</p> : catalogCohorts.length === 0 ? <p className="empty-state">Todavía no hay cohortes disponibles.</p> : visibleCatalogCohorts.length === 0 ? <p className="empty-state">No hay cohortes que coincidan con el filtro.</p> : (
+                  <table className="course-table">
+                    <thead><tr><th>Curso</th><th>Docente</th><th>Fechas</th><th>Modalidad</th><th>Cupo</th><th>Costo inscripción</th><th>Estado</th><th>Acción</th></tr></thead>
+                    <tbody>{visibleCatalogCohorts.map((cohorte) => {
+                      const agotado = cohorte.estadoDisponibilidad === 'Cupo Agotado'
+                      const yaInscrito = misIdsCohorteActivos.has(cohorte.id)
+                      return (
+                        <tr key={cohorte.id}>
+                          <td>{cohorte.cursoNombre}</td>
+                          <td>{cohorte.docenteNombre} {cohorte.docenteApellido}</td>
+                          <td>{formatFecha(cohorte.fechaInicio)} → {formatFecha(cohorte.fechaFin)}</td>
+                          <td>{modalidadLabels[cohorte.modalidad] || cohorte.modalidad}</td>
+                          <td>{cohorte.cuposDisponibles === null ? 'Sin límite' : cohorte.cuposDisponibles}</td>
+                          <td>{formatMoney(cohorte.costoInscripcion)}</td>
+                          <td><span className={`course-state ${agotado ? 'inactive' : 'active'}`}>{cohorte.estadoDisponibilidad}</span></td>
+                          <td className="course-actions">
+                            {yaInscrito ? (
+                              <span className="empty-state">Ya inscripto</span>
+                            ) : (
+                              <button
+                                type="button"
+                                className="register-button"
+                                disabled={agotado || enrollingId === cohorte.id}
+                                onClick={() => handleEnroll(cohorte)}
+                              >
+                                {enrollingId === cohorte.id ? 'Inscribiendo...' : agotado ? 'Cupo Agotado' : 'Inscribirme'}
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      )
+                    })}</tbody>
+                  </table>
+                )}
+              </div>
+            </section>
           ) : (
             <>
               <section className="role-panel" id="panel">
@@ -613,6 +757,15 @@ function App() {
                     <span className="eyebrow">COHORTES</span>
                     <strong>Crear cohorte</strong>
                     <span className="admin-card-desc">Modalidades, cupos, fechas y costos.</span>
+                  </a>
+                </section>
+              )}
+              {authUser.idRol === 1 && (
+                <section className="admin-nav" aria-label="Secciones de estudiante">
+                  <a className="admin-card" href="#catalogo">
+                    <span className="eyebrow">CATÁLOGO</span>
+                    <strong>Ver cohortes disponibles</strong>
+                    <span className="admin-card-desc">Elegí tu modalidad y reservá tu lugar.</span>
                   </a>
                 </section>
               )}
