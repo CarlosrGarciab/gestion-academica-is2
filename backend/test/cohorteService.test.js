@@ -12,9 +12,6 @@ const BASE = {
   nombre: 'Cohorte A',
   fechaInicio: '2026-10-01',
   fechaFin: '2026-12-01',
-  costoInscripcion: 150000,
-  costoCuotaMensual: 120000,
-  tarifaHoraDocente: 45000,
 };
 
 const rowCreada = (datos) => ({
@@ -102,26 +99,6 @@ test('crearCohorte exige cupo y link en modalidad hibrida', async () => {
     await assert.rejects(
       cohorteService.crearCohorte({ ...BASE, modalidad: 'hibrida', cupoFisico: 30 }),
       { message: 'El link de acceso es obligatorio' }
-    );
-  } finally {
-    restaurar(originales);
-  }
-});
-
-test('crearCohorte exige costos mayores a 0', async () => {
-  const originales = mockDependencias();
-  try {
-    await assert.rejects(
-      cohorteService.crearCohorte({ ...BASE, modalidad: 'virtual', linkAcceso: 'https://meet.example.com/a', costoInscripcion: 0 }),
-      { message: 'El costo de inscripcion debe ser mayor a 0' }
-    );
-    await assert.rejects(
-      cohorteService.crearCohorte({ ...BASE, modalidad: 'virtual', linkAcceso: 'https://meet.example.com/a', costoCuotaMensual: 0 }),
-      { message: 'La cuota mensual debe ser mayor a 0' }
-    );
-    await assert.rejects(
-      cohorteService.crearCohorte({ ...BASE, modalidad: 'virtual', linkAcceso: 'https://meet.example.com/a', tarifaHoraDocente: 0 }),
-      { message: 'La tarifa por hora del docente debe ser mayor a 0' }
     );
   } finally {
     restaurar(originales);

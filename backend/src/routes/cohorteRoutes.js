@@ -2,9 +2,7 @@ const router = require('express').Router();
 const cohorteController = require('../controllers/cohorteController');
 const { verifyToken, requireRole } = require('../middlewares/authMiddleware');
 
-router.use(verifyToken, requireRole('Administrador'));
-
-router.get('/cohortes', cohorteController.listarCohortes);
-router.post('/cohortes', cohorteController.crearCohorte);
+router.get('/cohortes', verifyToken, requireRole('Administrador'), cohorteController.listarCohortes);
+router.post('/cohortes', verifyToken, requireRole('Administrador'), cohorteController.crearCohorte);
 
 module.exports = router;

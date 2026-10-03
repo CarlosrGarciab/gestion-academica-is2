@@ -4,6 +4,80 @@ const assert = require('node:assert/strict');
 const usuarioModel = require('../src/models/usuarioModel');
 const usuarioService = require('../src/services/usuarioService');
 
+const BASE_CREAR = {
+  nombre: 'Laura',
+  apellido: 'Docente',
+  email: 'laura@example.com',
+  password: 'clave1234',
+  idRol: 2,
+};
+
+test('crearUsuario crea un usuario con el rol asignado', async () => {
+  const origBuscarIdRolAsignable = usuarioModel.buscarIdRolAsignable;
+  const origBuscarPorEmail = usuarioModel.buscarPorEmail;
+  const origCrearUsuario = usuarioModel.crearUsuario;
+
+  usuarioModel.buscarIdRolAsignable = async (idRol) => idRol;
+  usuarioModel.buscarPorEmail = async () => undefined;
+  let datos;
+  usuarioModel.crearUsuario = async (d) => { datos = d; return { id: 9, nombre: d.nombre, apellido: d.apellido, email: d.email, id_rol: d.id_rol, activo: true }; };
+
+  try {
+    const usuario = await usuarioService.crearUsuario(BASE_CREAR);
+    assert.equal(usuario.idRol, 2);
+    assert.equal(usuario.activo, true);
+    assert.equal(datos.id_rol, 2);
+    assert.equal(datos.email, 'laura@example.com');
+    assert.match(datos.password_hash, /^\$2[aby]\$/);
+  } finally {
+    usuarioModel.buscarIdRolAsignable = origBuscarIdRolAsignable;
+    usuarioModel.buscarPorEmail = origBuscarPorEmail;
+    usuarioModel.crearUsuario = origCrearUsuario;
+  }
+});
+
+test('crearUsuario rechaza password muy corta', async () => {
+  const origBuscarIdRolAsignable = usuarioModel.buscarIdRolAsignable;
+  usuarioModel.buscarIdRolAsignable = async () => undefined;
+  try {
+    await assert.rejects(
+      usuarioService.crearUsuario({ ...BASE_CREAR, password: 'abc' }),
+      { message: 'La password debe tener al menos 8 caracteres, una letra y un numero' }
+    );
+  } finally {
+    usuarioModel.buscarIdRolAsignable = origBuscarIdRolAsignable;
+  }
+});
+
+test('crearUsuario rechaza rol no asignable', async () => {
+  const origBuscarIdRolAsignable = usuarioModel.buscarIdRolAsignable;
+  usuarioModel.buscarIdRolAsignable = async () => undefined;
+  try {
+    await assert.rejects(
+      usuarioService.crearUsuario(BASE_CREAR),
+      { message: 'El rol no esta disponible para asignacion' }
+    );
+  } finally {
+    usuarioModel.buscarIdRolAsignable = origBuscarIdRolAsignable;
+  }
+});
+
+test('crearUsuario rechaza email ya utilizado', async () => {
+  const origBuscarIdRolAsignable = usuarioModel.buscarIdRolAsignable;
+  const origBuscarPorEmail = usuarioModel.buscarPorEmail;
+  usuarioModel.buscarIdRolAsignable = async (idRol) => idRol;
+  usuarioModel.buscarPorEmail = async () => ({ id: 1 });
+  try {
+    await assert.rejects(
+      usuarioService.crearUsuario(BASE_CREAR),
+      { message: 'Email ya utilizado' }
+    );
+  } finally {
+    usuarioModel.buscarIdRolAsignable = origBuscarIdRolAsignable;
+    usuarioModel.buscarPorEmail = origBuscarPorEmail;
+  }
+});
+
 test('cambiarRol asigna un rol Editable (Docente o Estudiante)', async () => {
   const originalBuscarIdRolAsignable = usuarioModel.buscarIdRolAsignable;
   const originalActualizarRol = usuarioModel.actualizarRol;

@@ -10,14 +10,16 @@ const crearCurso = asyncHandler(async (req, res) => {
     const {
         nombre,
         descripcion,
-        area_conocimiento
+        area_conocimiento,
+        nivel
     } = req.body;
 
     const curso = await cursoService.crearCurso(
         req.user.id,
         nombre,
         descripcion,
-        area_conocimiento
+        area_conocimiento,
+        nivel
     );
 
     res.status(201).json(curso);
@@ -29,14 +31,16 @@ const editarCurso = asyncHandler(async (req, res) => {
     const {
         nombre,
         descripcion,
-        area_conocimiento
+        area_conocimiento,
+        nivel
     } = req.body;
 
     const curso = await cursoService.editarCurso(
         id,
         nombre,
         descripcion,
-        area_conocimiento
+        area_conocimiento,
+        nivel
     );
 
     res.json(curso);

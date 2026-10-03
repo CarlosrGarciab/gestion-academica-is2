@@ -1,4 +1,5 @@
 const usuarioModel = require('../models/usuarioModel');
+const bcrypt = require('bcrypt');
 const { ApiError } = require('../middlewares/errorMiddleware');
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -12,6 +13,46 @@ const toDTO = (row) =>
         idRol: row.id_rol,
         activo: row.activo,
     });
+
+const crearUsuario = async ({ nombre, apellido, email, password, idRol }) => {
+    if (!nombre?.trim() || !apellido?.trim() || !email?.trim() || !password) {
+        throw new ApiError(400, 'Nombre, apellido, email y password son obligatorios');
+    }
+
+    if (password.length < 8 || !/[A-Za-z]/.test(password) || !/\d/.test(password)) {
+        throw new ApiError(400, 'La password debe tener al menos 8 caracteres, una letra y un numero');
+    }
+
+    const emailNormalizado = email.trim().toLowerCase();
+    if (!EMAIL_REGEX.test(emailNormalizado)) {
+        throw new ApiError(400, 'Email invalido');
+    }
+
+    if (idRol === undefined || idRol === null || idRol === '') {
+        throw new ApiError(400, 'El rol es obligatorio');
+    }
+
+    const idRolAsignable = await usuarioModel.buscarIdRolAsignable(Number(idRol));
+    if (!idRolAsignable) {
+        throw new ApiError(400, 'El rol no esta disponible para asignacion');
+    }
+
+    const existente = await usuarioModel.buscarPorEmail(emailNormalizado);
+    if (existente) {
+        throw new ApiError(400, 'Email ya utilizado');
+    }
+
+    const password_hash = await bcrypt.hash(password, 10);
+    const usuario = await usuarioModel.crearUsuario({
+        nombre: nombre.trim(),
+        apellido: apellido.trim(),
+        email: emailNormalizado,
+        id_rol: idRolAsignable,
+        password_hash,
+    });
+
+    return toDTO(usuario);
+};
 
 const obtenerPorId = async (id) => {
     const usuario = await usuarioModel.buscarPorId(id);
@@ -92,4 +133,4 @@ const cambiarActivo = async (id, activo, actorId) => {
     };
 };
 
-module.exports = { obtenerPorId, listarUsuariosActivos, actualizarUsuario, cambiarActivo, cambiarRol }
+module.exports = { crearUsuario, obtenerPorId, listarUsuariosActivos, actualizarUsuario, cambiarActivo, cambiarRol }

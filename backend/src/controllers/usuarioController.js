@@ -11,6 +11,11 @@ const getById = asyncHandler(async (req, res) => {
     res.status(200).json(usuario);
 });
 
+const crear = asyncHandler(async (req, res) => {
+    const usuario = await usuarioService.crearUsuario(req.body);
+    res.status(201).json(usuario);
+});
+
 const listarUsuariosActivos = asyncHandler(async (req, res) => {
     const usuariosActivos = await usuarioService.listarUsuariosActivos();
     res.status(200).json(usuariosActivos);
@@ -38,4 +43,4 @@ const cambiarRol = asyncHandler(async (req, res) => {
     res.status(200).json(usuario);
 });
 
-module.exports = { getById, listarUsuariosActivos, actualizar, cambiarActivo, cambiarRol };
+module.exports = { getById, crear, listarUsuariosActivos, actualizar, cambiarActivo, cambiarRol };

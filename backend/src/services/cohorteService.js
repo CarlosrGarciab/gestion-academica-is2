@@ -31,9 +31,15 @@ const toDTO = (row) => ({
     modalidad: row.modalidad,
     cupoFisico: row.cupo_fisico,
     linkAcceso: row.link_acceso,
-    costoInscripcion: row.costo_inscripcion,
-    costoCuotaMensual: row.costo_cuota_mensual,
-    tarifaHoraDocente: row.tarifa_hora_docente,
+    precioInscripcion: row.precio_inscripcion === null || row.precio_inscripcion === undefined
+        ? null
+        : Number(row.precio_inscripcion),
+    costoCuotaMensual: row.costo_cuota_mensual === null || row.costo_cuota_mensual === undefined
+        ? null
+        : Number(row.costo_cuota_mensual),
+    tarifaHora: row.tarifa_hora === null || row.tarifa_hora === undefined
+        ? null
+        : Number(row.tarifa_hora),
     activo: row.activo,
 });
 
@@ -65,9 +71,6 @@ const crearCohorte = async ({
     modalidad,
     cupoFisico,
     linkAcceso,
-    costoInscripcion,
-    costoCuotaMensual,
-    tarifaHoraDocente,
 }) => {
     const modalidadNormalizada = modalidad?.trim().toLowerCase();
     if (!MODALIDADES.includes(modalidadNormalizada)) {
@@ -92,16 +95,6 @@ const crearCohorte = async ({
     }
     if (new Date(fechaFin) < new Date(fechaInicio)) {
         throw new ApiError(400, "La fecha de fin debe ser posterior o igual a la de inicio");
-    }
-
-    if (!esNumeroPositivo(costoInscripcion)) {
-        throw new ApiError(400, "El costo de inscripcion debe ser mayor a 0");
-    }
-    if (!esNumeroPositivo(costoCuotaMensual)) {
-        throw new ApiError(400, "La cuota mensual debe ser mayor a 0");
-    }
-    if (!esNumeroPositivo(tarifaHoraDocente)) {
-        throw new ApiError(400, "La tarifa por hora del docente debe ser mayor a 0");
     }
 
     let cupoFisicoFinal = null;
@@ -134,9 +127,6 @@ const crearCohorte = async ({
         modalidad: modalidadNormalizada,
         cupo_fisico: cupoFisicoFinal,
         link_acceso: linkAccesoFinal,
-        costo_inscripcion: Number(costoInscripcion),
-        costo_cuota_mensual: Number(costoCuotaMensual),
-        tarifa_hora_docente: Number(tarifaHoraDocente),
     });
 
     return {
