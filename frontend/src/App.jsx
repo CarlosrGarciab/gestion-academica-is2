@@ -88,6 +88,7 @@ function App() {
   const [catalogSearch, setCatalogSearch] = useState('')
   const [myInscripciones, setMyInscripciones] = useState([])
   const [enrollingId, setEnrollingId] = useState(null)
+  const [enrollModal, setEnrollModal] = useState(null)
   const [docentesConCategoria, setDocentesConCategoria] = useState([])
   const [niveles, setNiveles] = useState([])
   const [categoriasDocente, setCategoriasDocente] = useState([])
@@ -635,6 +636,7 @@ function App() {
   }
 
   const handleEnroll = async (cohorte) => {
+    if (!cohorte) return
     setCatalogMessage(null)
     setEnrollingId(cohorte.id)
 
@@ -662,7 +664,8 @@ function App() {
               : item.estadoDisponibilidad
           }
         : item))
-      setCatalogMessage({ type: 'success', text: `Te inscribiste a "${cohorte.nombre || cohorte.cursoNombre}". Tu inscripción quedó pendiente de pago.` })
+      setCatalogMessage({ type: 'success', text: `Te inscribiste a "${cohorte.nombre || cohorte.cursoNombre}". Tu inscripción quedó pendiente de aprobación.` })
+      setEnrollModal(null)
     } catch (error) {
       setCatalogMessage({ type: 'error', text: error.message })
     } finally {
@@ -1103,9 +1106,9 @@ function App() {
                                 type="button"
                                 className="register-button"
                                 disabled={agotado || enrollingId === cohorte.id}
-                                onClick={() => handleEnroll(cohorte)}
+                                onClick={() => setEnrollModal(cohorte)}
                               >
-                                {enrollingId === cohorte.id ? 'Inscribiendo...' : agotado ? 'Cupo Agotado' : 'Inscribirme'}
+                                Inscribirme
                               </button>
                             )}
                           </td>
@@ -1215,6 +1218,20 @@ function App() {
             </section>
           )}
         </>
+      )}
+
+      {enrollModal && (
+        <div className="role-modal-overlay" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setEnrollModal(null) }}>
+          <div className="role-modal" role="dialog" aria-modal="true" aria-label="Confirmar inscripción">
+            <p className="eyebrow">INSCRIPCIÓN</p>
+            <h3>Confirmar inscripción</h3>
+            <p>¿Confirmás inscribirte a <strong>{enrollModal.nombre || enrollModal.cursoNombre}</strong> ({modalidadLabels[enrollModal.modalidad] || enrollModal.modalidad}) dictada por <strong>{enrollModal.docenteNombre} {enrollModal.docenteApellido}</strong>? La inscripción quedará <strong>pendiente</strong>.</p>
+            <div className="role-modal-actions">
+              <button className="secondary-button" type="button" onClick={() => setEnrollModal(null)} disabled={enrollingId === enrollModal.id}>Cancelar</button>
+              <button className="register-button" type="button" onClick={() => handleEnroll(enrollModal)} disabled={enrollingId === enrollModal.id}>{enrollingId === enrollModal.id ? 'Inscribiendo...' : 'Confirmar'}</button>
+            </div>
+          </div>
+        </div>
       )}
 
       {roleModal && roleModalData && (
