@@ -81,6 +81,7 @@ Endpoints:
 
 - `POST /api/horas-docentes`: registra una sesión; requiere rol `Docente`.
 - `GET /api/horas-docentes/mias`: lista las sesiones del docente autenticado.
+- `GET /api/horas-docentes/pendientes`: lista los registros en estado `pendiente` con el docente asociado; requiere rol `Administrador` y es la fuente del `id` para aprobar o rechazar.
 - `GET /api/horas-docentes/reporte?desde=YYYY-MM-DD&hasta=YYYY-MM-DD`: devuelve la liquidación consolidada de registros aprobados; requiere rol `Administrador`.
 - `GET /api/horas-docentes/reporte?...&estado=pendiente`: permite revisar otros estados.
 - `PATCH /api/horas-docentes/:id/estado`: aprueba o rechaza un registro pendiente.

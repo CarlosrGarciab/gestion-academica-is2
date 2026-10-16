@@ -14,6 +14,11 @@ const listarMisHoras = asyncHandler(async (req, res) => {
     res.json(registros);
 });
 
+const listarPendientes = asyncHandler(async (req, res) => {
+    const registros = await horasDocenteService.listarPendientes();
+    res.json(registros);
+});
+
 const obtenerReporte = asyncHandler(async (req, res) => {
     const { desde, hasta, idDocente, estado } = req.query;
     const reporte = await horasDocenteService.obtenerReporte({
@@ -36,6 +41,7 @@ const cambiarEstado = asyncHandler(async (req, res) => {
 module.exports = {
     registrarHoras,
     listarMisHoras,
+    listarPendientes,
     obtenerReporte,
     cambiarEstado,
 };

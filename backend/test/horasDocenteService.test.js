@@ -10,6 +10,8 @@ function mockModels(overrides = {}) {
         cohorte: horasDocenteModel.obtenerCohorteDelDocente,
         crear: horasDocenteModel.crear,
         reporte: horasDocenteModel.obtenerReporte,
+        pendientes: horasDocenteModel.listarPendientes,
+        estado: horasDocenteModel.actualizarEstado,
         tarifa: docenteCategoriaModel.asignacionVigente,
     };
 
@@ -30,6 +32,8 @@ function mockModels(overrides = {}) {
         fecha_registro: "2026-10-15T12:00:00.000Z",
     }));
     horasDocenteModel.obtenerReporte = overrides.reporte || (async () => []);
+    horasDocenteModel.listarPendientes = overrides.pendientes || (async () => []);
+    horasDocenteModel.actualizarEstado = overrides.estado || (async () => null);
     docenteCategoriaModel.asignacionVigente = overrides.tarifa || (async () => ({
         tarifa_hora: "60000",
     }));
@@ -41,6 +45,8 @@ function restoreModels(originales) {
     horasDocenteModel.obtenerCohorteDelDocente = originales.cohorte;
     horasDocenteModel.crear = originales.crear;
     horasDocenteModel.obtenerReporte = originales.reporte;
+    horasDocenteModel.listarPendientes = originales.pendientes;
+    horasDocenteModel.actualizarEstado = originales.estado;
     docenteCategoriaModel.asignacionVigente = originales.tarifa;
 }
 
@@ -173,6 +179,89 @@ test("obtenerReporte rechaza un período invertido", async () => {
                 hasta: "2026-10-01",
             }),
             { message: "La fecha hasta no puede ser anterior a la fecha desde" }
+        );
+    } finally {
+        restoreModels(originales);
+    }
+});
+
+test("listarPendientes expone el docente y normaliza los importes", async () => {
+    const originales = mockModels({
+        pendientes: async () => [{
+            id: 5,
+            id_docente: 7,
+            id_cohorte: 3,
+            cohorte_nombre: "JS 2026",
+            curso_nombre: "JavaScript",
+            fecha: "2026-10-10",
+            horas_dictadas: "3",
+            tarifa_hora: "60000",
+            subtotal: "180000",
+            observaciones: null,
+            estado: "pendiente",
+            fecha_registro: "2026-10-15T12:00:00.000Z",
+            docente_nombre: "Ana",
+            docente_apellido: "Docente",
+        }],
+    });
+
+    try {
+        const pendientes = await horasDocenteService.listarPendientes();
+        assert.equal(pendientes.length, 1);
+        assert.equal(pendientes[0].id, 5);
+        assert.equal(pendientes[0].horasDictadas, 3);
+        assert.equal(pendientes[0].subtotal, 180000);
+        assert.equal(pendientes[0].docenteNombre, "Ana");
+        assert.equal(pendientes[0].docenteApellido, "Docente");
+    } finally {
+        restoreModels(originales);
+    }
+});
+
+test("cambiarEstado aprueba un registro pendiente", async () => {
+    const originales = mockModels({
+        estado: async (id, estado) => ({
+            id,
+            id_docente: 7,
+            id_cohorte: 3,
+            fecha: "2026-10-10",
+            horas_dictadas: "3",
+            tarifa_hora: "60000",
+            subtotal: "180000",
+            observaciones: null,
+            estado,
+            fecha_registro: "2026-10-15T12:00:00.000Z",
+        }),
+    });
+
+    try {
+        const registro = await horasDocenteService.cambiarEstado(5, "aprobado");
+        assert.equal(registro.id, 5);
+        assert.equal(registro.estado, "aprobado");
+        assert.equal(registro.subtotal, 180000);
+    } finally {
+        restoreModels(originales);
+    }
+});
+
+test("cambiarEstado rechaza un estado no permitido", async () => {
+    const originales = mockModels();
+    try {
+        await assert.rejects(
+            horasDocenteService.cambiarEstado(5, "pendiente"),
+            { message: "El estado debe ser aprobado o rechazado" }
+        );
+    } finally {
+        restoreModels(originales);
+    }
+});
+
+test("cambiarEstado devuelve 404 si el registro ya fue revisado", async () => {
+    const originales = mockModels({ estado: async () => null });
+    try {
+        await assert.rejects(
+            horasDocenteService.cambiarEstado(99, "aprobado"),
+            { message: "El registro no existe o ya fue revisado" }
         );
     } finally {
         restoreModels(originales);

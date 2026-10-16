@@ -15,6 +15,12 @@ router.get(
     horasDocenteController.listarMisHoras
 );
 router.get(
+    "/horas-docentes/pendientes",
+    verifyToken,
+    requireRole("Administrador"),
+    horasDocenteController.listarPendientes
+);
+router.get(
     "/horas-docentes/reporte",
     verifyToken,
     requireRole("Administrador"),

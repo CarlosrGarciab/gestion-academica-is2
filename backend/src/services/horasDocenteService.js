@@ -110,6 +110,15 @@ const listarMisHoras = async (idDocente) => {
     return registros.map(toDTO);
 };
 
+const listarPendientes = async () => {
+    const registros = await horasDocenteModel.listarPendientes();
+    return registros.map((row) => ({
+        ...toDTO(row),
+        docenteNombre: row.docente_nombre,
+        docenteApellido: row.docente_apellido,
+    }));
+};
+
 const obtenerReporte = async ({ desde, hasta, idDocente, estado = ESTADOS_LIQUIDABLES[0] }) => {
     validarPeriodo(desde, hasta);
 
@@ -154,6 +163,7 @@ const cambiarEstado = async (id, estado) => {
 module.exports = {
     registrarHoras,
     listarMisHoras,
+    listarPendientes,
     obtenerReporte,
     cambiarEstado,
 };

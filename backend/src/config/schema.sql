@@ -54,7 +54,7 @@ ALTER TABLE nivel_curso ALTER COLUMN costo_cuota_mensual SET NOT NULL;
 
 CREATE TABLE IF NOT EXISTS categoria_docente (
     id SERIAL PRIMARY KEY,
-    nombre VARCHAR(30) NOT NULL, ---Se elimina el check en categoria docente, asi se ofrece mas libertad en las creaciones
+    nombre VARCHAR(30) NOT NULL CHECK (nombre IN ('principiante', 'intermedio', 'avanzado')),
     tarifa_hora NUMERIC(10,2) NOT NULL CHECK (tarifa_hora >= 0),
     vigencia_desde DATE NOT NULL,
     vigencia_hasta DATE CHECK (vigencia_hasta IS NULL OR vigencia_hasta >= vigencia_desde)
