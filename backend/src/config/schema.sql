@@ -54,7 +54,7 @@ ALTER TABLE nivel_curso ALTER COLUMN costo_cuota_mensual SET NOT NULL;
 
 CREATE TABLE IF NOT EXISTS categoria_docente (
     id SERIAL PRIMARY KEY,
-    nombre VARCHAR(30) NOT NULL CHECK (nombre IN ('principiante', 'intermedio', 'avanzado')),
+    nombre VARCHAR(30) NOT NULL, ---Se elimina el check en categoria docente, asi se ofrece mas libertad en las creaciones
     tarifa_hora NUMERIC(10,2) NOT NULL CHECK (tarifa_hora >= 0),
     vigencia_desde DATE NOT NULL,
     vigencia_hasta DATE CHECK (vigencia_hasta IS NULL OR vigencia_hasta >= vigencia_desde)
@@ -120,4 +120,19 @@ CREATE TABLE IF NOT EXISTS inscripcion (
     fecha_solicitud TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     fecha_confirmacion TIMESTAMP,
     UNIQUE (id_estudiante, id_cohorte)
+);
+
+CREATE TABLE IF NOT EXISTS registro_horas_docente (
+    id SERIAL PRIMARY KEY,
+    id_docente INT NOT NULL REFERENCES usuario(id),
+    id_cohorte INT NOT NULL REFERENCES cohorte(id),
+    fecha DATE NOT NULL,
+    horas_dictadas NUMERIC(5,2) NOT NULL CHECK (horas_dictadas > 0),
+    tarifa_hora NUMERIC(10,2) NOT NULL CHECK (tarifa_hora >= 0),
+    subtotal NUMERIC(12,2) GENERATED ALWAYS AS
+        (horas_dictadas * tarifa_hora) STORED,
+    observaciones TEXT,
+    estado VARCHAR(20) NOT NULL DEFAULT 'pendiente'
+        CHECK (estado IN ('pendiente', 'aprobado', 'rechazado')),
+    fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

@@ -69,3 +69,21 @@ routes → controller → service → model → PostgreSQL
 
 - Todas las queries usan parámetros posicionales (`$1`, `$2`...) vía `pool.query(texto, [valores])`. Nunca se concatena input del usuario directamente en el string SQL.
 - Operaciones que requieren atomicidad entre varias tablas (ej. inscripción + pago) usan transacciones explícitas (`BEGIN` / `COMMIT` / `ROLLBACK`) con un cliente dedicado del pool.
+
+## Registro de horas docentes
+
+El módulo `horasDocente` permite que un docente registre sesiones dictadas. La
+tarifa se obtiene según la asignación de categoría vigente en la fecha de la
+sesión y se guarda como valor histórico en `registro_horas_docente`. El
+subtotal lo calcula PostgreSQL como `horas_dictadas * tarifa_hora`.
+
+Endpoints:
+
+- `POST /api/horas-docentes`: registra una sesión; requiere rol `Docente`.
+- `GET /api/horas-docentes/mias`: lista las sesiones del docente autenticado.
+- `GET /api/horas-docentes/reporte?desde=YYYY-MM-DD&hasta=YYYY-MM-DD`: devuelve la liquidación consolidada de registros aprobados; requiere rol `Administrador`.
+- `GET /api/horas-docentes/reporte?...&estado=pendiente`: permite revisar otros estados.
+- `PATCH /api/horas-docentes/:id/estado`: aprueba o rechaza un registro pendiente.
+
+Una cohorte puede tener varias sesiones en la misma fecha; no existe una
+restricción `UNIQUE` por docente, cohorte y fecha.

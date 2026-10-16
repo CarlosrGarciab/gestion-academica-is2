@@ -12,6 +12,7 @@ const inscripcionRoutes = require('./routes/inscripcionRoutes');
 const nivelCursoRoutes = require('./routes/nivelCursoRoutes');
 const categoriaDocenteRoutes = require('./routes/categoriaDocenteRoutes');
 const docenteCategoriaRoutes = require('./routes/docenteCategoriaRoutes');
+const horasDocenteRoutes = require('./routes/horasDocenteRoutes');
 const { errorHandler } = require('./middlewares/errorMiddleware');
 
 const app = express();
@@ -37,6 +38,7 @@ app.use('/api', inscripcionRoutes);
 app.use('/api', nivelCursoRoutes);
 app.use('/api', categoriaDocenteRoutes);
 app.use('/api', docenteCategoriaRoutes);
+app.use('/api', horasDocenteRoutes);
 
 app.get('/', (req, res) => {
   res.json({ mensaje: 'API Gestión Académica CCGB ejecutándose correctamente' });
