@@ -43,6 +43,19 @@ const listarPorDocente = async (idDocente) => {
     return rows;
 };
 
+const listarCohortesDelDocente = async (idDocente) => {
+    const { rows } = await pool.query(
+        `SELECT c.id, c.nombre, c.fecha_inicio, c.fecha_fin, c.modalidad,
+                cu.nombre AS curso_nombre
+         FROM cohorte c
+         JOIN curso cu ON cu.id = c.id_curso
+         WHERE c.id_docente = $1
+         ORDER BY c.fecha_inicio DESC, c.id DESC`,
+        [idDocente]
+    );
+    return rows;
+};
+
 const listarPendientes = async () => {
     const { rows } = await pool.query(
         `SELECT rh.*, c.nombre AS cohorte_nombre, cu.nombre AS curso_nombre,
@@ -102,6 +115,7 @@ module.exports = {
     obtenerCohorteDelDocente,
     crear,
     listarPorDocente,
+    listarCohortesDelDocente,
     listarPendientes,
     obtenerReporte,
     actualizarEstado,

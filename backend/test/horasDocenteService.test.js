@@ -11,6 +11,7 @@ function mockModels(overrides = {}) {
         crear: horasDocenteModel.crear,
         reporte: horasDocenteModel.obtenerReporte,
         pendientes: horasDocenteModel.listarPendientes,
+        cohortesDocente: horasDocenteModel.listarCohortesDelDocente,
         estado: horasDocenteModel.actualizarEstado,
         tarifa: docenteCategoriaModel.asignacionVigente,
     };
@@ -33,6 +34,7 @@ function mockModels(overrides = {}) {
     }));
     horasDocenteModel.obtenerReporte = overrides.reporte || (async () => []);
     horasDocenteModel.listarPendientes = overrides.pendientes || (async () => []);
+    horasDocenteModel.listarCohortesDelDocente = overrides.cohortesDocente || (async () => []);
     horasDocenteModel.actualizarEstado = overrides.estado || (async () => null);
     docenteCategoriaModel.asignacionVigente = overrides.tarifa || (async () => ({
         tarifa_hora: "60000",
@@ -46,6 +48,7 @@ function restoreModels(originales) {
     horasDocenteModel.crear = originales.crear;
     horasDocenteModel.obtenerReporte = originales.reporte;
     horasDocenteModel.listarPendientes = originales.pendientes;
+    horasDocenteModel.listarCohortesDelDocente = originales.cohortesDocente;
     horasDocenteModel.actualizarEstado = originales.estado;
     docenteCategoriaModel.asignacionVigente = originales.tarifa;
 }
@@ -262,6 +265,45 @@ test("cambiarEstado devuelve 404 si el registro ya fue revisado", async () => {
         await assert.rejects(
             horasDocenteService.cambiarEstado(99, "aprobado"),
             { message: "El registro no existe o ya fue revisado" }
+        );
+    } finally {
+        restoreModels(originales);
+    }
+});
+
+test("listarCohortesDelDocente formatea fechas y nombres de curso", async () => {
+    const originales = mockModels({
+        cohortesDocente: async () => [{
+            id: 3,
+            nombre: "JS 2026-A",
+            curso_nombre: "JavaScript",
+            fecha_inicio: "2026-10-01T00:00:00.000Z",
+            fecha_fin: "2026-10-31T00:00:00.000Z",
+            modalidad: "virtual",
+        }],
+    });
+
+    try {
+        const cohortes = await horasDocenteService.listarCohortesDelDocente(7);
+        assert.deepEqual(cohortes, [{
+            id: 3,
+            nombre: "JS 2026-A",
+            cursoNombre: "JavaScript",
+            fechaInicio: "2026-10-01",
+            fechaFin: "2026-10-31",
+            modalidad: "virtual",
+        }]);
+    } finally {
+        restoreModels(originales);
+    }
+});
+
+test("listarCohortesDelDocente rechaza un docente inválido", async () => {
+    const originales = mockModels();
+    try {
+        await assert.rejects(
+            horasDocenteService.listarCohortesDelDocente(null),
+            { message: "Docente inválido" }
         );
     } finally {
         restoreModels(originales);

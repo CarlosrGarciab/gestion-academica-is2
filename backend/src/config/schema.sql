@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS nivel_curso (
 ALTER TABLE nivel_curso DROP CONSTRAINT IF EXISTS nivel_curso_nombre_key;
 
 INSERT INTO nivel_curso (nombre, precio_inscripcion, costo_cuota_mensual, vigencia_desde, vigencia_hasta)
-SELECT nombre, precio_inscripcion, costo_cuota_mensual, vigencia_desde, vigencia_hasta
+SELECT nombre, precio_inscripcion, costo_cuota_mensual, vigencia_desde::date, vigencia_hasta::date
 FROM (VALUES
     ('principiante', 150000, 100000, '2026-01-01', NULL),
     ('intermedio', 250000, 150000, '2026-01-01', NULL),
@@ -63,7 +63,7 @@ CREATE TABLE IF NOT EXISTS categoria_docente (
 ALTER TABLE categoria_docente DROP CONSTRAINT IF EXISTS categoria_docente_nombre_key;
 
 INSERT INTO categoria_docente (nombre, tarifa_hora, vigencia_desde, vigencia_hasta)
-SELECT nombre, tarifa_hora, vigencia_desde, vigencia_hasta
+SELECT nombre, tarifa_hora, vigencia_desde::date, vigencia_hasta::date
 FROM (VALUES
     ('principiante', 40000, '2026-01-01', NULL),
     ('intermedio', 60000, '2026-01-01', NULL),

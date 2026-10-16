@@ -33,6 +33,10 @@ function App() {
     const ahora = new Date()
     return `${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, '0')}-${String(ahora.getDate()).padStart(2, '0')}`
   }
+  const inicioMesInput = () => {
+    const ahora = new Date()
+    return `${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, '0')}-01`
+  }
   const getRoute = () => window.location.hash.replace(/^#\/?/, '') || 'home'
   const [route, setRoute] = useState(() => getRoute())
   const [authUser, setAuthUser] = useState(() => {
@@ -103,10 +107,23 @@ function App() {
   const [coursePageSize, setCoursePageSize] = useState(5)
   const [cohortPage, setCohortPage] = useState(1)
   const [cohortPageSize, setCohortPageSize] = useState(5)
+  const [misCohortes, setMisCohortes] = useState([])
+  const [misHoras, setMisHoras] = useState([])
+  const [misHorasLoading, setMisHorasLoading] = useState(false)
+  const [horasData, setHorasData] = useState({ idCohorte: '', fecha: fechaHoyInput(), horasDictadas: '', observaciones: '' })
+  const [horasMessage, setHorasMessage] = useState(null)
+  const [pendientesHoras, setPendientesHoras] = useState([])
+  const [pendientesLoading, setPendientesLoading] = useState(false)
+  const [horasAdminMessage, setHorasAdminMessage] = useState(null)
+  const [registroAccion, setRegistroAccion] = useState(null)
+  const [reporteForm, setReporteForm] = useState({ desde: inicioMesInput(), hasta: fechaHoyInput() })
+  const [reporteHoras, setReporteHoras] = useState(null)
+  const [reporteLoading, setReporteLoading] = useState(false)
 
   const roleLabels = { 1: 'Estudiante', 2: 'Docente', 3: 'Administrador' }
   const modalidadLabels = { presencial: 'Presencial', virtual: 'Virtual', hibrida: 'Híbrida' }
   const nivelLabels = { principiante: 'Principiante', intermedio: 'Intermedio', avanzado: 'Avanzado' }
+  const estadoHorasLabels = { pendiente: 'Pendiente', aprobado: 'Aprobado', rechazado: 'Rechazado' }
   const nivelCursoSeleccionado = courses.find((course) => String(course.id) === String(cohortData.idCurso))
   const docenteSeleccionado = docentesConCategoria.find((docente) => String(docente.id) === String(cohortData.idDocente))
   const visibleUsers = users.filter((user) => {
@@ -281,6 +298,57 @@ function App() {
     }
 
     loadCatalog()
+  }, [apiUrl, authUser?.idRol])
+
+  useEffect(() => {
+    if (authUser?.idRol !== 2) {
+      return
+    }
+
+    const loadDocenteData = async () => {
+      setMisHorasLoading(true)
+      try {
+        const session = JSON.parse(sessionStorage.getItem('ccgb_session'))
+        const [cohortesResponse, horasResponse] = await Promise.all([
+          fetch(`${apiUrl}/api/horas-docentes/cohortes`, { headers: { Authorization: `Bearer ${session?.token}` } }),
+          fetch(`${apiUrl}/api/horas-docentes/mias`, { headers: { Authorization: `Bearer ${session?.token}` } })
+        ])
+        const [cohortesResult, horasResult] = await Promise.all([cohortesResponse.json(), horasResponse.json()])
+        if (!cohortesResponse.ok) throw new Error(cohortesResult.message || 'No se pudieron cargar tus cohortes')
+        if (!horasResponse.ok) throw new Error(horasResult.message || 'No se pudieron cargar tus horas')
+        setMisCohortes(cohortesResult)
+        setMisHoras(horasResult)
+      } catch (error) {
+        setHorasMessage({ type: 'error', text: error.message })
+      } finally {
+        setMisHorasLoading(false)
+      }
+    }
+
+    loadDocenteData()
+  }, [apiUrl, authUser?.idRol])
+
+  useEffect(() => {
+    if (authUser?.idRol !== 3) {
+      return
+    }
+
+    const loadPendientes = async () => {
+      setPendientesLoading(true)
+      try {
+        const session = JSON.parse(sessionStorage.getItem('ccgb_session'))
+        const response = await fetch(`${apiUrl}/api/horas-docentes/pendientes`, { headers: { Authorization: `Bearer ${session?.token}` } })
+        const result = await response.json()
+        if (!response.ok) throw new Error(result.message || 'No se pudieron cargar los registros pendientes')
+        setPendientesHoras(result)
+      } catch (error) {
+        setHorasAdminMessage({ type: 'error', text: error.message })
+      } finally {
+        setPendientesLoading(false)
+      }
+    }
+
+    loadPendientes()
   }, [apiUrl, authUser?.idRol])
 
 
@@ -673,10 +741,99 @@ function App() {
     }
   }
 
+  const handleHorasChange = (event) => {
+    const { name, value } = event.target
+    setHorasData((current) => ({ ...current, [name]: value }))
+  }
+
+  const handleHorasSubmit = async (event) => {
+    event.preventDefault()
+    setHorasMessage(null)
+
+    try {
+      const session = JSON.parse(sessionStorage.getItem('ccgb_session'))
+      const response = await fetch(`${apiUrl}/api/horas-docentes`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session?.token}`
+        },
+        body: JSON.stringify({
+          idCohorte: horasData.idCohorte,
+          fecha: horasData.fecha,
+          horasDictadas: horasData.horasDictadas,
+          observaciones: horasData.observaciones
+        })
+      })
+      const result = await response.json()
+      if (!response.ok) throw new Error(result.message || 'No se pudo registrar la sesión')
+
+      setMisHoras((current) => [result, ...current])
+      setHorasData({ idCohorte: '', fecha: fechaHoyInput(), horasDictadas: '', observaciones: '' })
+      setHorasMessage({ type: 'success', text: 'Sesión registrada. Quedó pendiente de aprobación.' })
+    } catch (error) {
+      setHorasMessage({ type: 'error', text: error.message })
+    }
+  }
+
+  const cambiarEstadoRegistro = async (registro, estado) => {
+    setHorasAdminMessage(null)
+    setRegistroAccion(registro.id)
+
+    try {
+      const session = JSON.parse(sessionStorage.getItem('ccgb_session'))
+      const response = await fetch(`${apiUrl}/api/horas-docentes/${registro.id}/estado`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session?.token}`
+        },
+        body: JSON.stringify({ estado })
+      })
+      const result = await response.json()
+      if (!response.ok) throw new Error(result.message || 'No se pudo actualizar el registro')
+
+      setPendientesHoras((current) => current.filter((item) => item.id !== registro.id))
+      setHorasAdminMessage({
+        type: 'success',
+        text: `Registro de ${registro.docenteNombre} ${registro.docenteApellido} ${estado === 'aprobado' ? 'aprobado' : 'rechazado'}.`
+      })
+    } catch (error) {
+      setHorasAdminMessage({ type: 'error', text: error.message })
+    } finally {
+      setRegistroAccion(null)
+    }
+  }
+
+  const handleReporteChange = (event) => {
+    const { name, value } = event.target
+    setReporteForm((current) => ({ ...current, [name]: value }))
+  }
+
+  const generarReporte = async (event) => {
+    event.preventDefault()
+    setHorasAdminMessage(null)
+    setReporteLoading(true)
+
+    try {
+      const session = JSON.parse(sessionStorage.getItem('ccgb_session'))
+      const params = new URLSearchParams({ desde: reporteForm.desde, hasta: reporteForm.hasta })
+      const response = await fetch(`${apiUrl}/api/horas-docentes/reporte?${params.toString()}`, {
+        headers: { Authorization: `Bearer ${session?.token}` }
+      })
+      const result = await response.json()
+      if (!response.ok) throw new Error(result.message || 'No se pudo generar el reporte')
+      setReporteHoras(result)
+    } catch (error) {
+      setHorasAdminMessage({ type: 'error', text: error.message })
+    } finally {
+      setReporteLoading(false)
+    }
+  }
+
   const formatMoney = (value) => {
     return new Intl.NumberFormat('es-PY', { style: 'currency', currency: 'PYG', maximumFractionDigits: 0 }).format(Number(value))
   }
-
   const formatFecha = (value) => {
   if (!value) return '—'
   const fecha = new Date(value)
@@ -738,7 +895,7 @@ function App() {
       </section>
 
       {authUser ? (
-        authUser.idRol === 3 && ['usuarios', 'cursos', 'cohortes', 'aranceles'].includes(route) ? (
+        authUser.idRol === 3 && ['usuarios', 'cursos', 'cohortes', 'aranceles', 'horas'].includes(route) ? (
           <>
               {route === 'usuarios' && (
               <section className="courses-panel" id="usuarios">
@@ -1068,7 +1225,117 @@ function App() {
                 </div>
               </section>
               )}
+              {route === 'horas' && (
+              <section className="courses-panel" id="horas-admin">
+                <div className="section-heading">
+                  <div>
+                    <p className="eyebrow">HORAS DOCENTES</p>
+                    <h2>Revisión y liquidación</h2>
+                  </div>
+                  <a className="secondary-button back-link" href="#panel">Volver al panel</a>
+                </div>
+                {horasAdminMessage && <p className={`form-message ${horasAdminMessage.type}`} role="status">{horasAdminMessage.text}</p>}
+                <div className="arancel-block">
+                  <h3>Sesiones pendientes de aprobación</h3>
+                  <div className="course-table-wrap">
+                    {pendientesLoading ? <p className="empty-state">Cargando registros pendientes...</p> : pendientesHoras.length === 0 ? <p className="empty-state">No hay sesiones pendientes.</p> : (
+                      <table className="course-table">
+                        <thead><tr><th>Docente</th><th>Curso</th><th>Cohorte</th><th>Fecha</th><th>Horas</th><th>Tarifa/hora</th><th>Subtotal</th><th>Observaciones</th><th>Acciones</th></tr></thead>
+                        <tbody>{pendientesHoras.map((registro) => (
+                          <tr key={registro.id}>
+                            <td>{registro.docenteNombre} {registro.docenteApellido}</td>
+                            <td>{registro.cursoNombre}</td>
+                            <td>{registro.cohorteNombre || '—'}</td>
+                            <td>{formatFecha(registro.fecha)}</td>
+                            <td>{registro.horasDictadas}</td>
+                            <td>{formatMoney(registro.tarifaHora)}</td>
+                            <td>{formatMoney(registro.subtotal)}</td>
+                            <td>{registro.observaciones || '—'}</td>
+                            <td className="course-actions">
+                              <button type="button" onClick={() => cambiarEstadoRegistro(registro, 'aprobado')} disabled={registroAccion === registro.id}>Aprobar</button>
+                              <button type="button" onClick={() => cambiarEstadoRegistro(registro, 'rechazado')} disabled={registroAccion === registro.id}>Rechazar</button>
+                            </td>
+                          </tr>
+                        ))}</tbody>
+                      </table>
+                    )}
+                  </div>
+                </div>
+                <div className="arancel-block">
+                  <h3>Liquidación por docente</h3>
+                  <form className="course-form" onSubmit={generarReporte}>
+                    <label>Desde<input name="desde" type="date" value={reporteForm.desde} onChange={handleReporteChange} required /></label>
+                    <label>Hasta<input name="hasta" type="date" value={reporteForm.hasta} onChange={handleReporteChange} required /></label>
+                    <div className="course-form-actions"><button className="register-button" type="submit" disabled={reporteLoading}>{reporteLoading ? 'Generando...' : 'Generar reporte'}</button></div>
+                  </form>
+                  {reporteHoras && (
+                    reporteHoras.length === 0 ? <p className="empty-state">No hay registros aprobados en el período.</p> : (
+                      <div className="course-table-wrap">
+                        <table className="course-table">
+                          <thead><tr><th>Docente</th><th>Sesiones</th><th>Total horas</th><th>Total a pagar</th></tr></thead>
+                          <tbody>{reporteHoras.map((fila) => (
+                            <tr key={fila.idDocente}>
+                              <td>{fila.nombre} {fila.apellido}</td>
+                              <td>{fila.cantidadRegistros}</td>
+                              <td>{fila.totalHoras}</td>
+                              <td>{formatMoney(fila.totalAPagar)}</td>
+                            </tr>
+                          ))}</tbody>
+                          <tfoot>
+                            <tr>
+                              <td colSpan="3">Total general</td>
+                              <td>{formatMoney(reporteHoras.reduce((acc, fila) => acc + Number(fila.totalAPagar), 0))}</td>
+                            </tr>
+                          </tfoot>
+                        </table>
+                      </div>
+                    )
+                  )}
+                </div>
+              </section>
+              )}
             </>
+          ) : authUser.idRol === 2 && route === 'horas' ? (
+            <section className="courses-panel" id="horas">
+              <div className="section-heading">
+                <div>
+                  <p className="eyebrow">HORAS DOCENTES</p>
+                  <h2>Registrar horas dictadas</h2>
+                </div>
+                <a className="secondary-button back-link" href="#panel">Volver al panel</a>
+              </div>
+              {horasMessage && <p className={`form-message ${horasMessage.type}`} role="status">{horasMessage.text}</p>}
+              <form className="course-form" onSubmit={handleHorasSubmit}>
+                <label className="form-field-full">Cohorte<select name="idCohorte" value={horasData.idCohorte} onChange={handleHorasChange} required>
+                  <option value="">Seleccionar cohorte</option>
+                  {misCohortes.map((cohorte) => <option key={cohorte.id} value={cohorte.id}>{cohorte.cursoNombre}{cohorte.nombre ? ` — ${cohorte.nombre}` : ''} ({formatFecha(cohorte.fechaInicio)} → {formatFecha(cohorte.fechaFin)})</option>)}
+                </select></label>
+                <label>Fecha de la sesión<input name="fecha" type="date" value={horasData.fecha} onChange={handleHorasChange} required /></label>
+                <label>Horas dictadas<input name="horasDictadas" type="number" min="0.5" step="0.5" value={horasData.horasDictadas} onChange={handleHorasChange} required /></label>
+                <label className="form-field-full">Observaciones<textarea name="observaciones" value={horasData.observaciones} onChange={handleHorasChange} placeholder="Tema dictado, novedades, etc." /></label>
+                <div className="course-form-actions"><button className="register-button" type="submit">Registrar sesión</button></div>
+              </form>
+              {!misHorasLoading && misCohortes.length === 0 && <p className="empty-state">No tenés cohortes asignadas todavía.</p>}
+              <div className="course-table-wrap">
+                {misHorasLoading ? <p className="empty-state">Cargando tus horas...</p> : misHoras.length === 0 ? <p className="empty-state">Todavía no registraste horas.</p> : (
+                  <table className="course-table">
+                    <thead><tr><th>Fecha</th><th>Curso</th><th>Cohorte</th><th>Horas</th><th>Tarifa/hora</th><th>Subtotal</th><th>Estado</th><th>Observaciones</th></tr></thead>
+                    <tbody>{misHoras.map((registro) => (
+                      <tr key={registro.id}>
+                        <td>{formatFecha(registro.fecha)}</td>
+                        <td>{registro.cursoNombre}</td>
+                        <td>{registro.cohorteNombre || '—'}</td>
+                        <td>{registro.horasDictadas}</td>
+                        <td>{formatMoney(registro.tarifaHora)}</td>
+                        <td>{formatMoney(registro.subtotal)}</td>
+                        <td><span className={`course-state ${registro.estado === 'aprobado' ? 'active' : registro.estado === 'pendiente' ? 'pending' : 'inactive'}`}>{estadoHorasLabels[registro.estado] || registro.estado}</span></td>
+                        <td>{registro.observaciones || '—'}</td>
+                      </tr>
+                    ))}</tbody>
+                  </table>
+                )}
+              </div>
+            </section>
           ) : authUser.idRol === 1 && route === 'catalogo' ? (
             <section className="courses-panel" id="catalogo">
               <div className="section-heading">
@@ -1150,6 +1417,20 @@ function App() {
                     <span className="eyebrow">ARANCELES</span>
                     <strong>Niveles y categorías</strong>
                     <span className="admin-card-desc">Precios de inscripción y tarifas por hora, con vigencia.</span>
+                  </a>
+                  <a className="admin-card" href="#horas">
+                    <span className="eyebrow">HORAS DOCENTES</span>
+                    <strong>Revisar horas y liquidación</strong>
+                    <span className="admin-card-desc">Aprobá sesiones dictadas y calculá pagos por docente.</span>
+                  </a>
+                </section>
+              )}
+              {authUser.idRol === 2 && (
+                <section className="admin-nav" aria-label="Secciones de docente">
+                  <a className="admin-card" href="#horas">
+                    <span className="eyebrow">HORAS DOCENTES</span>
+                    <strong>Registrar horas dictadas</strong>
+                    <span className="admin-card-desc">Cargá tus sesiones y seguí su estado de aprobación.</span>
                   </a>
                 </section>
               )}

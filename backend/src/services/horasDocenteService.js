@@ -110,6 +110,21 @@ const listarMisHoras = async (idDocente) => {
     return registros.map(toDTO);
 };
 
+const listarCohortesDelDocente = async (idDocente) => {
+    if (!esNumeroPositivo(idDocente)) {
+        throw new ApiError(400, "Docente inválido");
+    }
+    const cohortes = await horasDocenteModel.listarCohortesDelDocente(Number(idDocente));
+    return cohortes.map((row) => ({
+        id: row.id,
+        nombre: row.nombre,
+        cursoNombre: row.curso_nombre,
+        fechaInicio: formatearFecha(row.fecha_inicio),
+        fechaFin: formatearFecha(row.fecha_fin),
+        modalidad: row.modalidad,
+    }));
+};
+
 const listarPendientes = async () => {
     const registros = await horasDocenteModel.listarPendientes();
     return registros.map((row) => ({
@@ -163,6 +178,7 @@ const cambiarEstado = async (id, estado) => {
 module.exports = {
     registrarHoras,
     listarMisHoras,
+    listarCohortesDelDocente,
     listarPendientes,
     obtenerReporte,
     cambiarEstado,
