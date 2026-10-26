@@ -134,6 +134,15 @@ const listarPendientes = async () => {
     }));
 };
 
+const listarHistorial = async () => {
+    const registros = await horasDocenteModel.listarHistorial();
+    return registros.map((row) => ({
+        ...toDTO(row),
+        docenteNombre: row.docente_nombre,
+        docenteApellido: row.docente_apellido,
+    }));
+};
+
 const obtenerReporte = async ({ desde, hasta, idDocente, estado = ESTADOS_LIQUIDABLES[0] }) => {
     validarPeriodo(desde, hasta);
 
@@ -180,6 +189,7 @@ module.exports = {
     listarMisHoras,
     listarCohortesDelDocente,
     listarPendientes,
+    listarHistorial,
     obtenerReporte,
     cambiarEstado,
 };

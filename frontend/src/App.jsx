@@ -114,6 +114,10 @@ function App() {
   const [horasMessage, setHorasMessage] = useState(null)
   const [pendientesHoras, setPendientesHoras] = useState([])
   const [pendientesLoading, setPendientesLoading] = useState(false)
+  const [historialHoras, setHistorialHoras] = useState([])
+  const [historialHorasLoading, setHistorialHorasLoading] = useState(false)
+  const [historialHorasPage, setHistorialHorasPage] = useState(1)
+  const [historialHorasPageSize, setHistorialHorasPageSize] = useState(5)
   const [horasAdminMessage, setHorasAdminMessage] = useState(null)
   const [registroAccion, setRegistroAccion] = useState(null)
   const [reporteForm, setReporteForm] = useState({ desde: inicioMesInput(), hasta: fechaHoyInput() })
@@ -171,6 +175,12 @@ function App() {
   const totalCohortPages = Math.max(1, Math.ceil(visibleCohorts.length / cohortPageSize))
   const currentCohortPage = Math.min(cohortPage, totalCohortPages)
   const pagedCohorts = visibleCohorts.slice((currentCohortPage - 1) * cohortPageSize, currentCohortPage * cohortPageSize)
+  const totalHistorialHorasPages = Math.max(1, Math.ceil(historialHoras.length / historialHorasPageSize))
+  const currentHistorialHorasPage = Math.min(historialHorasPage, totalHistorialHorasPages)
+  const pagedHistorialHoras = historialHoras.slice(
+    (currentHistorialHorasPage - 1) * historialHorasPageSize,
+    currentHistorialHorasPage * historialHorasPageSize
+  )
 
   useEffect(() => {
     const session = JSON.parse(sessionStorage.getItem('ccgb_session'))
@@ -349,6 +359,31 @@ function App() {
     }
 
     loadPendientes()
+  }, [apiUrl, authUser?.idRol])
+
+  useEffect(() => {
+    if (authUser?.idRol !== 3) {
+      return
+    }
+
+    const loadHistorial = async () => {
+      setHistorialHorasLoading(true)
+      try {
+        const session = JSON.parse(sessionStorage.getItem('ccgb_session'))
+        const response = await fetch(`${apiUrl}/api/horas-docentes/historial`, {
+          headers: { Authorization: `Bearer ${session.token}` }
+        })
+        const result = await response.json()
+        if (!response.ok) throw new Error(result.message || 'No se pudo cargar el historial de horas')
+        setHistorialHoras(result)
+      } catch (error) {
+        setHorasAdminMessage({ type: 'error', text: error.message })
+      } finally {
+        setHistorialHorasLoading(false)
+      }
+    }
+
+    loadHistorial()
   }, [apiUrl, authUser?.idRol])
 
 
@@ -794,6 +829,9 @@ function App() {
       if (!response.ok) throw new Error(result.message || 'No se pudo actualizar el registro')
 
       setPendientesHoras((current) => current.filter((item) => item.id !== registro.id))
+      setHistorialHoras((current) => current.map((item) => (
+        item.id === registro.id ? { ...item, estado } : item
+      )))
       setHorasAdminMessage({
         type: 'success',
         text: `Registro de ${registro.docenteNombre} ${registro.docenteApellido} ${estado === 'aprobado' ? 'aprobado' : 'rechazado'}.`
@@ -1260,6 +1298,38 @@ function App() {
                       </table>
                     )}
                   </div>
+                </div>
+                <div className="arancel-block">
+                  <h3>Historial de sesiones</h3>
+                  <div className="course-table-wrap">
+                    {historialHorasLoading ? <p className="empty-state">Cargando historial...</p> : historialHoras.length === 0 ? <p className="empty-state">Todavía no hay sesiones registradas.</p> : (
+                      <table className="course-table">
+                        <thead><tr><th>Docente</th><th>Curso</th><th>Cohorte</th><th>Fecha</th><th>Horas</th><th>Tarifa/hora</th><th>Subtotal</th><th>Observaciones</th><th>Estado</th></tr></thead>
+                        <tbody>{pagedHistorialHoras.map((registro) => (
+                          <tr key={registro.id}>
+                            <td>{registro.docenteNombre} {registro.docenteApellido}</td>
+                            <td>{registro.cursoNombre}</td>
+                            <td>{registro.cohorteNombre || '—'}</td>
+                            <td>{formatFecha(registro.fecha)}</td>
+                            <td>{registro.horasDictadas}</td>
+                            <td>{formatMoney(registro.tarifaHora)}</td>
+                            <td>{formatMoney(registro.subtotal)}</td>
+                            <td>{registro.observaciones || '—'}</td>
+                            <td><span className={`course-state ${registro.estado === 'aprobado' ? 'active' : registro.estado === 'pendiente' ? 'pending' : 'inactive'}`}>{estadoHorasLabels[registro.estado] || registro.estado}</span></td>
+                          </tr>
+                        ))}</tbody>
+                      </table>
+                    )}
+                  </div>
+                  {!historialHorasLoading && historialHoras.length > 0 && (
+                    <Paginator
+                      page={currentHistorialHorasPage}
+                      pageSize={historialHorasPageSize}
+                      total={historialHoras.length}
+                      onPage={setHistorialHorasPage}
+                      onPageSize={(size) => { setHistorialHorasPageSize(size); setHistorialHorasPage(1) }}
+                    />
+                  )}
                 </div>
                 <div className="arancel-block">
                   <h3>Liquidación por docente</h3>

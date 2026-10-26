@@ -27,6 +27,12 @@ router.get(
     horasDocenteController.listarPendientes
 );
 router.get(
+    "/horas-docentes/historial",
+    verifyToken,
+    requireRole("Administrador"),
+    horasDocenteController.listarHistorial
+);
+router.get(
     "/horas-docentes/reporte",
     verifyToken,
     requireRole("Administrador"),

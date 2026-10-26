@@ -11,6 +11,7 @@ function mockModels(overrides = {}) {
         crear: horasDocenteModel.crear,
         reporte: horasDocenteModel.obtenerReporte,
         pendientes: horasDocenteModel.listarPendientes,
+        historial: horasDocenteModel.listarHistorial,
         cohortesDocente: horasDocenteModel.listarCohortesDelDocente,
         estado: horasDocenteModel.actualizarEstado,
         tarifa: docenteCategoriaModel.asignacionVigente,
@@ -34,6 +35,7 @@ function mockModels(overrides = {}) {
     }));
     horasDocenteModel.obtenerReporte = overrides.reporte || (async () => []);
     horasDocenteModel.listarPendientes = overrides.pendientes || (async () => []);
+    horasDocenteModel.listarHistorial = overrides.historial || (async () => []);
     horasDocenteModel.listarCohortesDelDocente = overrides.cohortesDocente || (async () => []);
     horasDocenteModel.actualizarEstado = overrides.estado || (async () => null);
     docenteCategoriaModel.asignacionVigente = overrides.tarifa || (async () => ({
@@ -48,6 +50,7 @@ function restoreModels(originales) {
     horasDocenteModel.crear = originales.crear;
     horasDocenteModel.obtenerReporte = originales.reporte;
     horasDocenteModel.listarPendientes = originales.pendientes;
+    horasDocenteModel.listarHistorial = originales.historial;
     horasDocenteModel.listarCohortesDelDocente = originales.cohortesDocente;
     horasDocenteModel.actualizarEstado = originales.estado;
     docenteCategoriaModel.asignacionVigente = originales.tarifa;
@@ -305,6 +308,49 @@ test("listarCohortesDelDocente rechaza un docente inválido", async () => {
             horasDocenteService.listarCohortesDelDocente(null),
             { message: "Docente inválido" }
         );
+    } finally {
+        restoreModels(originales);
+    }
+});
+
+test("listarHistorial devuelve sesiones con su docente y estado", async () => {
+    const originales = mockModels({
+        historial: async () => [{
+            id: 5,
+            id_docente: 7,
+            id_cohorte: 3,
+            cohorte_nombre: "JS 2026",
+            curso_nombre: "JavaScript",
+            fecha: "2026-10-10",
+            horas_dictadas: "3",
+            tarifa_hora: "60000",
+            subtotal: "180000",
+            observaciones: "Clase práctica",
+            estado: "aprobado",
+            fecha_registro: "2026-10-15T12:00:00.000Z",
+            docente_nombre: "Ana",
+            docente_apellido: "Docente",
+        }],
+    });
+
+    try {
+        const historial = await horasDocenteService.listarHistorial();
+        assert.deepEqual(historial, [{
+            id: 5,
+            idDocente: 7,
+            idCohorte: 3,
+            cohorteNombre: "JS 2026",
+            cursoNombre: "JavaScript",
+            fecha: "2026-10-10",
+            horasDictadas: 3,
+            tarifaHora: 60000,
+            subtotal: 180000,
+            observaciones: "Clase práctica",
+            estado: "aprobado",
+            fechaRegistro: "2026-10-15T12:00:00.000Z",
+            docenteNombre: "Ana",
+            docenteApellido: "Docente",
+        }]);
     } finally {
         restoreModels(originales);
     }

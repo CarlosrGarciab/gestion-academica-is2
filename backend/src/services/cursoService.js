@@ -40,7 +40,7 @@ const validarCurso = ({ nombre, descripcion, area_conocimiento, nivel }) => {
         throw new ApiError(400, "La descripción del curso es obligatoria");
     }
 
-    if (!areaConocimiento || areaConocimiento.trim() === "") {
+    if (!area_conocimiento || area_conocimiento.trim() === "") {
         throw new ApiError(400, "El área de conocimiento es obligatoria");
     }
 
@@ -56,7 +56,7 @@ const crearCurso = async (
     areaConocimiento,
     nivel
 ) => {
-    validarCurso({ nombre, descripcion, area_conocimiento, nivel });
+    validarCurso({ nombre, descripcion, area_conocimiento: areaConocimiento, nivel });
 
     const curso = await cursoModel.crearCurso(
         idUsuario,
@@ -76,7 +76,7 @@ const editarCurso = async (
     areaConocimiento,
     nivel
 ) => {
-    validarCurso({ nombre, descripcion, area_conocimiento, nivel });
+    validarCurso({ nombre, descripcion, area_conocimiento: areaConocimiento, nivel });
 
     const curso = await cursoModel.editarCurso(
         id,
