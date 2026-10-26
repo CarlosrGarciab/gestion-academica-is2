@@ -1,6 +1,7 @@
-# Estructura del propuesta para el BACK
+# Backend de Gestión Académica
 
-Guía de organización de carpetas y convenciones de código para el backend 
+API REST de la plataforma de gestión académica, implementada con Node.js,
+Express y PostgreSQL.
 
 ## Estructura de carpetas
 
@@ -12,18 +13,30 @@ backend/src/
 ├── controllers/        # Reciben req/res, validan input HTTP y llaman a los services
 │   ├── authController.js
 │   ├── usuarioController.js
-│   └── cursoController.js
+│   ├── cursoController.js
+│   ├── horasDocenteController.js
+│   ├── pagoController.js
+│   └── dashboardController.js
 ├── services/           # Lógica de negocio (reglas, validaciones, orquestación)
 │   ├── authService.js
 │   ├── usuarioService.js
-│   └── cursoService.js
+│   ├── cursoService.js
+│   ├── horasDocenteService.js
+│   ├── pagoService.js
+│   └── dashboardService.js
 ├── models/             # Acceso a datos: queries SQL parametrizadas contra PostgreSQL
 │   ├── usuarioModel.js
-│   └── cursoModel.js
+│   ├── cursoModel.js
+│   ├── horasDocenteModel.js
+│   ├── pagoModel.js
+│   └── dashboardModel.js
 ├── routes/             # Endpoints (Express Router), mapean URL -> controller
 │   ├── authRoutes.js
 │   ├── usuarioRoutes.js
-│   └── cursoRoutes.js
+│   ├── cursoRoutes.js
+│   ├── horasDocenteRoutes.js
+│   ├── pagoRoutes.js
+│   └── dashboardRoutes.js
 ├── middlewares/        # Autenticación (JWT), autorización por rol, manejo de errores
 │   ├── authMiddleware.js
 │   └── errorMiddleware.js
