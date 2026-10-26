@@ -73,6 +73,32 @@ h1 { max-width: 700px; margin: 18px 0 20px; color: var(--ink); font-family: Geor
 .role-modal h3 { margin: 0 0 10px; color: var(--ink); font-family: Georgia, serif; font-size: 24px; font-weight: 400; }
 .role-modal p { margin: 0 0 24px; color: var(--muted); font-size: 14px; line-height: 1.5; }
 .role-modal-actions { display: flex; justify-content: flex-end; gap: 12px; }
+.dashboard-kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin: 30px 0; }
+.dashboard-kpi, .dashboard-card { border: 1px solid var(--line); background: var(--paper); }
+.dashboard-kpi { display: grid; gap: 8px; padding: 22px; }
+.dashboard-kpi strong { color: var(--ink); font-family: Georgia, serif; font-size: clamp(26px, 3vw, 38px); font-weight: 400; }
+.dashboard-kpi > span:last-child, .dashboard-card-heading > span { color: var(--muted); font-size: 12px; }
+.dashboard-grid { display: grid; grid-template-columns: 1.2fr .8fr; gap: 20px; }
+.dashboard-card { padding: 22px; }
+.dashboard-card-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin-bottom: 24px; }
+.dashboard-card-heading h3 { margin: 0; color: var(--ink); font-family: Georgia, serif; font-size: 24px; font-weight: 400; }
+.occupancy-list { display: grid; gap: 18px; }
+.occupancy-row { display: grid; grid-template-columns: minmax(150px, 1.2fr) minmax(100px, 2fr) 48px 56px; align-items: center; gap: 12px; }
+.occupancy-label { display: grid; gap: 4px; min-width: 0; }
+.occupancy-label strong, .occupancy-label span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.occupancy-label strong { color: var(--ink); font-size: 13px; }
+.occupancy-label span { color: var(--muted); font-size: 11px; }
+.occupancy-track, .income-bar-track { overflow: hidden; background: var(--sage-light); }
+.occupancy-track { height: 9px; border-radius: 999px; }
+.occupancy-track span { display: block; height: 100%; background: var(--coral); border-radius: inherit; }
+.occupancy-value, .occupancy-percent { color: var(--ink); font-size: 12px; text-align: right; }
+.occupancy-percent { color: var(--muted); }
+.income-chart { display: grid; grid-template-columns: repeat(6, 1fr); align-items: end; gap: 10px; height: 230px; padding-top: 20px; }
+.income-column { display: grid; grid-template-rows: 28px 1fr 20px; align-items: end; gap: 5px; height: 100%; text-align: center; }
+.income-value { overflow: hidden; color: var(--muted); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.income-bar-track { display: flex; align-items: end; justify-content: center; height: 100%; }
+.income-bar-track span { display: block; width: 65%; min-height: 0; background: var(--sage-dark); }
+.income-column small { color: var(--muted); font-size: 10px; }
 .register-button.confirm-remove { color: var(--paper); background: #a33d2d; }
 .cohort-filters { grid-template-columns: minmax(220px, 1fr); }
 .course-form input[type="number"] { appearance: none; -moz-appearance: textfield; }

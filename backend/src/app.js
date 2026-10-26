@@ -14,6 +14,7 @@ const categoriaDocenteRoutes = require('./routes/categoriaDocenteRoutes');
 const docenteCategoriaRoutes = require('./routes/docenteCategoriaRoutes');
 const horasDocenteRoutes = require('./routes/horasDocenteRoutes');
 const pagoRoutes = require('./routes/pagoRoutes');
+const dashboardRoutes = require('./routes/dashboardRoutes');
 const { errorHandler } = require('./middlewares/errorMiddleware');
 
 const app = express();
@@ -41,6 +42,7 @@ app.use('/api', categoriaDocenteRoutes);
 app.use('/api', docenteCategoriaRoutes);
 app.use('/api', horasDocenteRoutes);
 app.use('/api', pagoRoutes);
+app.use('/api', dashboardRoutes);
 
 app.get('/', (req, res) => {
   res.json({ mensaje: 'API Gestión Académica CCGB ejecutándose correctamente' });

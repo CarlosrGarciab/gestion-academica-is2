@@ -105,3 +105,14 @@ Endpoints:
 El monto debe coincidir con el precio de inscripción vigente del nivel del
 curso. La tabla `pago` tiene una restricción única por inscripción, por lo que
 no se permiten pagos parciales ni un segundo pago para la misma inscripción.
+
+## Dashboard académico y financiero
+
+- `GET /api/dashboard`: devuelve los KPIs del administrador, la ocupación por
+  cohorte presencial o híbrida, los ingresos de los últimos seis meses y la
+  distribución de estados de inscripción.
+
+Los ingresos se calculan sobre los comprobantes registrados. Los alumnos
+inscritos y la ocupación consideran únicamente inscripciones `confirmada`;
+las cohortes virtuales no participan en el porcentaje de ocupación porque no
+tienen cupo físico.

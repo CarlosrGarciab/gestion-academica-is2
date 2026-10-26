@@ -128,6 +128,9 @@ function App() {
   const [pagoForm, setPagoForm] = useState({ idInscripcion: '', monto: '' })
   const [pagoMessage, setPagoMessage] = useState(null)
   const [misPagos, setMisPagos] = useState([])
+  const [dashboardData, setDashboardData] = useState(null)
+  const [dashboardLoading, setDashboardLoading] = useState(false)
+  const [dashboardMessage, setDashboardMessage] = useState(null)
 
   const roleLabels = { 1: 'Estudiante', 2: 'Docente', 3: 'Administrador' }
   const modalidadLabels = { presencial: 'Presencial', virtual: 'Virtual', hibrida: 'Híbrida' }
@@ -348,6 +351,27 @@ function App() {
       }
     }
     loadPagosPendientes()
+  }, [apiUrl, authUser?.idRol])
+
+  useEffect(() => {
+    if (authUser?.idRol !== 3) return
+    const loadDashboard = async () => {
+      setDashboardLoading(true)
+      try {
+        const session = JSON.parse(sessionStorage.getItem('ccgb_session'))
+        const response = await fetch(`${apiUrl}/api/dashboard`, {
+          headers: { Authorization: `Bearer ${session.token}` }
+        })
+        const result = await response.json()
+        if (!response.ok) throw new Error(result.message || 'No se pudo cargar el dashboard')
+        setDashboardData(result)
+      } catch (error) {
+        setDashboardMessage({ type: 'error', text: error.message })
+      } finally {
+        setDashboardLoading(false)
+      }
+    }
+    loadDashboard()
   }, [apiUrl, authUser?.idRol])
 
   useEffect(() => {
@@ -1007,8 +1031,83 @@ function App() {
       </section>
 
       {authUser ? (
-        authUser.idRol === 3 && ['usuarios', 'cursos', 'cohortes', 'aranceles', 'horas', 'pagos'].includes(route) ? (
+        authUser.idRol === 3 && ['dashboard', 'usuarios', 'cursos', 'cohortes', 'aranceles', 'horas', 'pagos'].includes(route) ? (
           <>
+              {route === 'dashboard' && (
+              <section className="courses-panel dashboard-panel" id="dashboard">
+                <div className="section-heading">
+                  <div>
+                    <p className="eyebrow">INDICADORES</p>
+                    <h2>Dashboard académico y financiero</h2>
+                    <p className="intro-copy">Una lectura rápida de ingresos, alumnos y ocupación de las cohortes con cupo físico.</p>
+                  </div>
+                  <a className="secondary-button back-link" href="#panel">Volver al panel</a>
+                </div>
+                {dashboardMessage && <p className={`form-message ${dashboardMessage.type}`} role="status">{dashboardMessage.text}</p>}
+                {dashboardLoading ? <p className="empty-state">Cargando indicadores...</p> : dashboardData && (
+                  <>
+                    <div className="dashboard-kpis">
+                      <article className="dashboard-kpi">
+                        <span className="eyebrow">INGRESOS REGISTRADOS</span>
+                        <strong>{formatMoney(dashboardData.kpis.totalIngresos)}</strong>
+                        <span>{dashboardData.kpis.cantidadPagos} comprobantes emitidos</span>
+                      </article>
+                      <article className="dashboard-kpi">
+                        <span className="eyebrow">ALUMNOS INSCRITOS</span>
+                        <strong>{dashboardData.kpis.totalAlumnosInscritos}</strong>
+                        <span>Inscripciones confirmadas</span>
+                      </article>
+                      <article className="dashboard-kpi">
+                        <span className="eyebrow">OCUPACIÓN PROMEDIO</span>
+                        <strong>{dashboardData.kpis.ocupacionPromedio}%</strong>
+                        <span>Cohortes presenciales e híbridas</span>
+                      </article>
+                    </div>
+                    <div className="dashboard-grid">
+                      <div className="dashboard-card">
+                        <div className="dashboard-card-heading">
+                          <h3>Ocupación por cohorte</h3>
+                          <span>Alumnos confirmados / cupo</span>
+                        </div>
+                        {dashboardData.ocupacionCohortes.length === 0 ? <p className="empty-state">No hay cohortes presenciales o híbridas con cupo.</p> : (
+                          <div className="occupancy-list">
+                            {dashboardData.ocupacionCohortes.map((cohorte) => (
+                              <div className="occupancy-row" key={cohorte.id}>
+                                <div className="occupancy-label">
+                                  <strong>{cohorte.cursoNombre}</strong>
+                                  <span>{cohorte.cohorteNombre} · {modalidadLabels[cohorte.modalidad]}</span>
+                                </div>
+                                <div className="occupancy-track" aria-label={`${cohorte.porcentajeOcupacion}% de ocupación`}>
+                                  <span style={{ width: `${Math.min(cohorte.porcentajeOcupacion, 100)}%` }} />
+                                </div>
+                                <strong className="occupancy-value">{cohorte.alumnosInscritos}/{cohorte.cupoFisico}</strong>
+                                <span className="occupancy-percent">{cohorte.porcentajeOcupacion}%</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      <div className="dashboard-card">
+                        <div className="dashboard-card-heading">
+                          <h3>Ingresos de los últimos 6 meses</h3>
+                          <span>Pagos de inscripción</span>
+                        </div>
+                        <div className="income-chart">
+                          {dashboardData.ingresosMensuales.map((mes) => {
+                            const maximo = Math.max(...dashboardData.ingresosMensuales.map((item) => item.total), 1)
+                            return <div className="income-column" key={mes.periodo} title={`${mes.etiqueta}: ${formatMoney(mes.total)}`}>
+                              <span className="income-value">{formatMoney(mes.total)}</span>
+                              <div className="income-bar-track"><span style={{ height: `${Math.max((mes.total / maximo) * 100, mes.total > 0 ? 4 : 0)}%` }} /></div>
+                              <small>{mes.etiqueta}</small>
+                            </div>
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </section>
+              )}
               {route === 'usuarios' && (
               <section className="courses-panel" id="usuarios">
                 <div className="section-heading">
@@ -1606,6 +1705,11 @@ function App() {
                     <span className="eyebrow">USUARIOS</span>
                     <strong>Administrar usuarios</strong>
                     <span className="admin-card-desc">Roles, permisos y estados de la comunidad.</span>
+                  </a>
+                  <a className="admin-card" href="#dashboard">
+                    <span className="eyebrow">INDICADORES</span>
+                    <strong>Dashboard académico y financiero</strong>
+                    <span className="admin-card-desc">Ingresos, alumnos inscritos y ocupación por cohorte.</span>
                   </a>
                   <a className="admin-card" href="#cursos">
                     <span className="eyebrow">OFERTA EDUCATIVA</span>
