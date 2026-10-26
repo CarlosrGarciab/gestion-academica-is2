@@ -89,3 +89,19 @@ Endpoints:
 
 Una cohorte puede tener varias sesiones en la misma fecha; no existe una
 restricción `UNIQUE` por docente, cohorte y fecha.
+
+## Registro de pagos y comprobantes
+
+El módulo `pago` registra un único pago por inscripción. Al verificar un pago,
+la operación transaccional crea un comprobante con número correlativo, guarda
+el monto y cambia la inscripción de `pendiente` a `confirmada`.
+
+Endpoints:
+
+- `GET /api/pagos/pendientes`: lista inscripciones pendientes para el Administrador.
+- `POST /api/pagos`: registra el pago único de inscripción y emite el comprobante; requiere rol `Administrador`.
+- `GET /api/pagos/mios`: lista los comprobantes del estudiante autenticado.
+
+El monto debe coincidir con el precio de inscripción vigente del nivel del
+curso. La tabla `pago` tiene una restricción única por inscripción, por lo que
+no se permiten pagos parciales ni un segundo pago para la misma inscripción.

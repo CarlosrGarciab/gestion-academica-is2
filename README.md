@@ -122,6 +122,9 @@ Endpoints disponibles:
 | `PATCH` | `/api/cursos/:id/activo` | JWT + Administrador |
 | `GET` | `/api/cohortes` | JWT + Administrador |
 | `POST` | `/api/cohortes` | JWT + Administrador |
+| `GET` | `/api/pagos/pendientes` | JWT + Administrador |
+| `POST` | `/api/pagos` | JWT + Administrador |
+| `GET` | `/api/pagos/mios` | JWT + Estudiante |
 
 La administración de cursos permite crear, listar, editar y desactivar cursos. La administración de usuarios permite al Administrador asignar o quitar los roles Docente y Administrador a un usuario. Las operaciones requieren un JWT de Administrador. El registro público crea cuentas con rol Estudiante; el rol Docente solo puede otorgarse desde el panel de Administrador vía `PATCH /api/usuarios/:id/rol`.
 

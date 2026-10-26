@@ -44,9 +44,6 @@ const toDisponibilidadDTO = (cohorte, ocupados) => {
         precioInscripcion: cohorte.precio_inscripcion === null || cohorte.precio_inscripcion === undefined
             ? null
             : Number(cohorte.precio_inscripcion),
-        costoCuotaMensual: cohorte.costo_cuota_mensual === null || cohorte.costo_cuota_mensual === undefined
-            ? null
-            : Number(cohorte.costo_cuota_mensual),
         cuposOcupados: ocupados,
         cuposDisponibles: conCupo ? cohorte.cupo_fisico - ocupados : null,
         estadoDisponibilidad: cupoAgotado ? "Cupo Agotado" : "Disponible",

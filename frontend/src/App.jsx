@@ -97,7 +97,7 @@ function App() {
   const [niveles, setNiveles] = useState([])
   const [categoriasDocente, setCategoriasDocente] = useState([])
   const [arancelMessage, setArancelMessage] = useState(null)
-  const [nivelForm, setNivelForm] = useState({ nombre: '', precioInscripcion: '', costoCuotaMensual: '', vigenciaDesde: fechaHoyInput(), vigenciaHasta: '' })
+  const [nivelForm, setNivelForm] = useState({ nombre: '', precioInscripcion: '', vigenciaDesde: fechaHoyInput(), vigenciaHasta: '' })
   const [categoriaForm, setCategoriaForm] = useState({ nombre: '', tarifaHora: '', vigenciaDesde: fechaHoyInput(), vigenciaHasta: '' })
   const [asignacionForm, setAsignacionForm] = useState({ idDocente: '', idCategoria: '', desde: fechaHoyInput(), hasta: '' })
   const [historialDocente, setHistorialDocente] = useState(null)
@@ -123,6 +123,11 @@ function App() {
   const [reporteForm, setReporteForm] = useState({ desde: inicioMesInput(), hasta: fechaHoyInput() })
   const [reporteHoras, setReporteHoras] = useState(null)
   const [reporteLoading, setReporteLoading] = useState(false)
+  const [pagosPendientes, setPagosPendientes] = useState([])
+  const [pagosLoading, setPagosLoading] = useState(false)
+  const [pagoForm, setPagoForm] = useState({ idInscripcion: '', monto: '' })
+  const [pagoMessage, setPagoMessage] = useState(null)
+  const [misPagos, setMisPagos] = useState([])
 
   const roleLabels = { 1: 'Estudiante', 2: 'Docente', 3: 'Administrador' }
   const modalidadLabels = { presencial: 'Presencial', virtual: 'Virtual', hibrida: 'Híbrida' }
@@ -157,10 +162,10 @@ function App() {
       || (courseStatus === 'inactive' && !course.activo)
     return matchesSearch && matchesStatus
   })
-  const misIdsCohorteActivos = new Set(
+  const misInscripcionesPorCohorte = new Map(
     myInscripciones
       .filter((inscripcion) => inscripcion.estado === 'pendiente' || inscripcion.estado === 'confirmada')
-      .map((inscripcion) => inscripcion.idCohorte)
+      .map((inscripcion) => [inscripcion.idCohorte, inscripcion])
   )
   const visibleCatalogCohorts = catalogCohorts.filter((cohorte) => {
     const search = catalogSearch.trim().toLowerCase()
@@ -308,6 +313,41 @@ function App() {
     }
 
     loadCatalog()
+  }, [apiUrl, authUser?.idRol])
+
+  useEffect(() => {
+    if (authUser?.idRol !== 1) return
+    const loadPagos = async () => {
+      try {
+        const session = JSON.parse(sessionStorage.getItem('ccgb_session'))
+        const response = await fetch(`${apiUrl}/api/pagos/mios`, { headers: { Authorization: `Bearer ${session.token}` } })
+        const result = await response.json()
+        if (!response.ok) throw new Error(result.message || 'No se pudieron cargar tus comprobantes')
+        setMisPagos(result)
+      } catch (error) {
+        setCatalogMessage({ type: 'error', text: error.message })
+      }
+    }
+    loadPagos()
+  }, [apiUrl, authUser?.idRol])
+
+  useEffect(() => {
+    if (authUser?.idRol !== 3) return
+    const loadPagosPendientes = async () => {
+      setPagosLoading(true)
+      try {
+        const session = JSON.parse(sessionStorage.getItem('ccgb_session'))
+        const response = await fetch(`${apiUrl}/api/pagos/pendientes`, { headers: { Authorization: `Bearer ${session.token}` } })
+        const result = await response.json()
+        if (!response.ok) throw new Error(result.message || 'No se pudieron cargar los pagos pendientes')
+        setPagosPendientes(result)
+      } catch (error) {
+        setPagoMessage({ type: 'error', text: error.message })
+      } finally {
+        setPagosLoading(false)
+      }
+    }
+    loadPagosPendientes()
   }, [apiUrl, authUser?.idRol])
 
   useEffect(() => {
@@ -655,7 +695,7 @@ function App() {
       const result = await response.json()
       if (!response.ok) throw new Error(result.message || 'No se pudo guardar el nivel')
       setNiveles((current) => [...current, result])
-      setNivelForm({ nombre: '', precioInscripcion: '', costoCuotaMensual: '', vigenciaDesde: fechaHoyInput(), vigenciaHasta: '' })
+      setNivelForm({ nombre: '', precioInscripcion: '', vigenciaDesde: fechaHoyInput(), vigenciaHasta: '' })
       setArancelMessage({ type: 'success', text: 'Valores del nivel registrados.' })
     } catch (error) {
       setArancelMessage({ type: 'error', text: error.message })
@@ -869,6 +909,40 @@ function App() {
     }
   }
 
+  const registrarPago = async (event) => {
+    event.preventDefault()
+    setPagoMessage(null)
+    try {
+      const session = JSON.parse(sessionStorage.getItem('ccgb_session'))
+      const response = await fetch(`${apiUrl}/api/pagos`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.token}` },
+        body: JSON.stringify(pagoForm)
+      })
+      const result = await response.json()
+      if (!response.ok) throw new Error(result.message || 'No se pudo registrar el pago')
+      setPagosPendientes((current) => current.filter((item) => item.id !== Number(pagoForm.idInscripcion)))
+      setPagoForm({ idInscripcion: '', monto: '' })
+      setPagoMessage({ type: 'success', text: `Pago registrado. Comprobante N.° ${result.numeroComprobante}. Inscripción confirmada.` })
+    } catch (error) {
+      setPagoMessage({ type: 'error', text: error.message })
+    }
+  }
+
+  const seleccionarPago = (inscripcion) => {
+    setPagoForm({
+      idInscripcion: String(inscripcion.id),
+      monto: inscripcion.precioInscripcion == null ? '' : String(inscripcion.precioInscripcion)
+    })
+  }
+
+  const handlePagoChange = (event) => {
+    const { name, value } = event.target
+    setPagoForm((current) => {
+      return { ...current, [name]: value }
+    })
+  }
+
   const formatMoney = (value) => {
     return new Intl.NumberFormat('es-PY', { style: 'currency', currency: 'PYG', maximumFractionDigits: 0 }).format(Number(value))
   }
@@ -933,7 +1007,7 @@ function App() {
       </section>
 
       {authUser ? (
-        authUser.idRol === 3 && ['usuarios', 'cursos', 'cohortes', 'aranceles', 'horas'].includes(route) ? (
+        authUser.idRol === 3 && ['usuarios', 'cursos', 'cohortes', 'aranceles', 'horas', 'pagos'].includes(route) ? (
           <>
               {route === 'usuarios' && (
               <section className="courses-panel" id="usuarios">
@@ -1104,7 +1178,6 @@ function App() {
                     <h3>Valores del curso</h3>
                     <p className="form-message derived-info">Nivel {nivelLabels[nivelCursoSeleccionado.nivel] || nivelCursoSeleccionado.nivel}</p>
                     <p className="form-message derived-info">Precio de inscripción: <strong>{nivelCursoSeleccionado.precioInscripcion != null ? formatMoney(nivelCursoSeleccionado.precioInscripcion) : '— sin precio vigente'}</strong></p>
-                    <p className="form-message derived-info">Cuota mensual: <strong>{nivelCursoSeleccionado.costoCuotaMensual != null ? formatMoney(nivelCursoSeleccionado.costoCuotaMensual) : '— sin cuota vigente'}</strong></p>
                   </div>
                 )}
                 {docenteSeleccionado && (
@@ -1120,7 +1193,7 @@ function App() {
                   {cohortsLoading ? <p className="empty-state">Cargando cohortes...</p> : cohorts.length === 0 ? <p className="empty-state">Todavía no hay cohortes registradas.</p> : visibleCohorts.length === 0 ? <p className="empty-state">No hay cohortes que coincidan con el filtro.</p> : (
                     <>
                     <table className="course-table">
-                      <thead><tr><th>Curso</th><th>Docente</th><th>Fechas</th><th>Modalidad</th><th>Cupo</th><th>Cuota mensual</th><th>Precio insc.</th><th>Tarifa/hora</th></tr></thead>
+                      <thead><tr><th>Curso</th><th>Docente</th><th>Fechas</th><th>Modalidad</th><th>Cupo</th><th>Precio insc.</th><th>Tarifa/hora</th></tr></thead>
                       <tbody>{pagedCohorts.map((cohorte) => (
                         <tr key={cohorte.id}>
                           <td>{cohorte.cursoNombre}</td>
@@ -1128,7 +1201,6 @@ function App() {
                           <td>{cohorte.fechaInicio} → {cohorte.fechaFin}</td>
                           <td>{modalidadLabels[cohorte.modalidad] || cohorte.modalidad}</td>
                           <td>{cohorte.cupoFisico ?? '—'}</td>
-                          <td>{formatMoney(cohorte.costoCuotaMensual)}</td>
                           <td>{cohorte.precioInscripcion != null ? formatMoney(cohorte.precioInscripcion) : '—'}</td>
                           <td>{cohorte.tarifaHora != null ? formatMoney(cohorte.tarifaHora) : '—'}</td>
                         </tr>
@@ -1167,19 +1239,17 @@ function App() {
                         <option value="avanzado">Avanzado</option>
                       </select></label>
                       <label>Precio de inscripción<input name="precioInscripcion" type="number" min="1" step="0.01" value={nivelForm.precioInscripcion} onChange={handleNivelChange} required /></label>
-                      <label>Cuota mensual<input name="costoCuotaMensual" type="number" min="1" step="0.01" value={nivelForm.costoCuotaMensual} onChange={handleNivelChange} required /></label>
                       <label className="form-field-full">Vigencia desde<input name="vigenciaDesde" type="date" value={nivelForm.vigenciaDesde} onChange={handleNivelChange} required /></label>
                       <label className="form-field-full">Vigencia hasta (vacío = vigente)<input name="vigenciaHasta" type="date" value={nivelForm.vigenciaHasta} onChange={handleNivelChange} /></label>
                       <div className="course-form-actions"><button className="register-button" type="submit">Registrar valores</button></div>
                     </form>
                     <div className="course-table-wrap">
                       <table className="course-table">
-                        <thead><tr><th>Nivel</th><th>Precio insc.</th><th>Cuota mensual</th><th>Vigencia</th></tr></thead>
+                        <thead><tr><th>Nivel</th><th>Precio insc.</th><th>Vigencia</th></tr></thead>
                         <tbody>{niveles.map((nivel) => (
                           <tr key={nivel.id} className={esVigente(nivel) ? 'arancel-vigente' : 'inactive-row'}>
                             <td>{nivelLabels[nivel.nombre] || nivel.nombre}</td>
                             <td>{formatMoney(nivel.precioInscripcion)}</td>
-                            <td>{formatMoney(nivel.costoCuotaMensual)}</td>
                             <td>{formatFecha(nivel.vigenciaDesde)} → {nivel.vigenciaHasta ? formatFecha(nivel.vigenciaHasta) : <span className="arancel-tag">vigente</span>}</td>
                           </tr>
                         ))}</tbody>
@@ -1260,6 +1330,44 @@ function App() {
                       </table>
                     </div>
                   )}
+                </div>
+              </section>
+              )}
+              {route === 'pagos' && (
+              <section className="courses-panel" id="pagos">
+                <div className="section-heading">
+                  <div><p className="eyebrow">PAGOS</p><h2>Registro de pagos y comprobantes</h2></div>
+                  <a className="secondary-button back-link" href="#panel">Volver al panel</a>
+                </div>
+                {pagoMessage && <p className={`form-message ${pagoMessage.type}`} role="status">{pagoMessage.text}</p>}
+                <div className="arancel-block">
+                  <h3>Inscripciones pendientes de pago</h3>
+                  {pagosLoading ? <p className="empty-state">Cargando inscripciones...</p> : pagosPendientes.length === 0 ? <p className="empty-state">No hay inscripciones pendientes.</p> : (
+                    <div className="course-table-wrap">
+                      <table className="course-table">
+                        <thead><tr><th>Estudiante</th><th>Curso</th><th>Cohorte</th><th>Precio inscripción</th><th>Acción</th></tr></thead>
+                        <tbody>{pagosPendientes.map((item) => (
+                          <tr key={item.id}>
+                            <td>{item.estudianteNombre} {item.estudianteApellido}</td>
+                            <td>{item.cursoNombre}</td><td>{item.cohorteNombre || '—'}</td>
+                            <td>{formatMoney(item.precioInscripcion)}</td>
+                            <td><button type="button" onClick={() => seleccionarPago(item)}>Registrar pago</button></td>
+                          </tr>
+                        ))}</tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+                <div className="arancel-block">
+                  <h3>Verificar pago y emitir comprobante</h3>
+                  <form className="course-form" onSubmit={registrarPago}>
+                    <label>Inscripción<select name="idInscripcion" value={pagoForm.idInscripcion} onChange={(event) => { const item = pagosPendientes.find((value) => String(value.id) === event.target.value); setPagoForm({ idInscripcion: event.target.value, monto: item?.precioInscripcion == null ? '' : String(item.precioInscripcion) }) }} required>
+                      <option value="">Seleccionar inscripción</option>
+                      {pagosPendientes.map((item) => <option key={item.id} value={item.id}>{item.estudianteNombre} {item.estudianteApellido} — {item.cursoNombre}</option>)}
+                    </select></label>
+                    <label>Monto<input name="monto" type="number" min="0.01" step="0.01" value={pagoForm.monto} onChange={handlePagoChange} required /></label>
+                    <div className="course-form-actions"><button className="register-button" type="submit">Confirmar pago y emitir comprobante</button></div>
+                  </form>
                 </div>
               </section>
               )}
@@ -1425,7 +1533,7 @@ function App() {
                     <thead><tr><th>Curso</th><th>Docente</th><th>Fechas</th><th>Modalidad</th><th>Cupo</th><th>Precio inscripción</th><th>Estado</th><th>Acción</th></tr></thead>
                     <tbody>{visibleCatalogCohorts.map((cohorte) => {
                       const agotado = cohorte.estadoDisponibilidad === 'Cupo Agotado'
-                      const yaInscrito = misIdsCohorteActivos.has(cohorte.id)
+                      const inscripcion = misInscripcionesPorCohorte.get(cohorte.id)
                       return (
                         <tr key={cohorte.id}>
                           <td>{cohorte.cursoNombre}</td>
@@ -1436,8 +1544,10 @@ function App() {
                           <td>{formatMoney(cohorte.precioInscripcion)}</td>
                           <td><span className={`course-state ${agotado ? 'inactive' : 'active'}`}>{cohorte.estadoDisponibilidad}</span></td>
                           <td className="course-actions">
-                            {yaInscrito ? (
-                              <span className="empty-state">Ya inscripto</span>
+                            {inscripcion ? (
+                              <span className={`course-state ${inscripcion.estado === 'confirmada' ? 'active' : 'pending'}`}>
+                                {inscripcion.estado === 'confirmada' ? 'Confirmada' : 'Pendiente'}
+                              </span>
                             ) : (
                               <button
                                 type="button"
@@ -1455,6 +1565,30 @@ function App() {
                   </table>
                 )}
               </div>
+            </section>
+          ) : authUser.idRol === 1 && route === 'pagos' ? (
+            <section className="courses-panel" id="pagos">
+              <div className="section-heading">
+                <div>
+                  <p className="eyebrow">PAGOS</p>
+                  <h2>Mis comprobantes de pago</h2>
+                </div>
+                <a className="secondary-button back-link" href="#panel">Volver al panel</a>
+              </div>
+              {catalogMessage && <p className={`form-message ${catalogMessage.type}`} role="status">{catalogMessage.text}</p>}
+              {misPagos.length === 0 ? <p className="empty-state">Todavía no tenés comprobantes.</p> : (
+                <div className="course-table-wrap">
+                  <table className="course-table">
+                    <thead><tr><th>Comprobante</th><th>Curso</th><th>Cohorte</th><th>Tipo</th><th>Monto</th><th>Fecha</th></tr></thead>
+                    <tbody>{misPagos.map((pago) => (
+                      <tr key={pago.id}>
+                        <td>{pago.numeroComprobante}</td><td>{pago.cursoNombre}</td><td>{pago.cohorteNombre || '—'}</td>
+                        <td>Arancel de inscripción</td><td>{formatMoney(pago.monto)}</td><td>{formatFecha(pago.fechaPago)}</td>
+                      </tr>
+                    ))}</tbody>
+                  </table>
+                </div>
+              )}
             </section>
           ) : (
             <>
@@ -1493,6 +1627,11 @@ function App() {
                     <strong>Revisar horas y liquidación</strong>
                     <span className="admin-card-desc">Aprobá sesiones dictadas y calculá pagos por docente.</span>
                   </a>
+                  <a className="admin-card" href="#pagos">
+                    <span className="eyebrow">PAGOS</span>
+                    <strong>Registrar pagos</strong>
+                    <span className="admin-card-desc">Confirmá inscripciones y emití comprobantes.</span>
+                  </a>
                 </section>
               )}
               {authUser.idRol === 2 && (
@@ -1510,6 +1649,11 @@ function App() {
                     <span className="eyebrow">CATÁLOGO</span>
                     <strong>Ver cohortes disponibles</strong>
                     <span className="admin-card-desc">Elegí tu modalidad y reservá tu lugar.</span>
+                  </a>
+                  <a className="admin-card" href="#pagos">
+                    <span className="eyebrow">PAGOS</span>
+                    <strong>Ver mis comprobantes</strong>
+                    <span className="admin-card-desc">Consultá tus recibos de cobro emitidos.</span>
                   </a>
                 </section>
               )}

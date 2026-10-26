@@ -44,7 +44,7 @@ const buscarVigentePorNombre = async (nombre, fecha) => {
     return rows[0] || null;
 };
 
-const crear = async ({ nombre, precio_inscripcion, costo_cuota_mensual, vigencia_desde, vigencia_hasta }) => {
+const crear = async ({ nombre, precio_inscripcion, vigencia_desde, vigencia_hasta }) => {
     const diaAnterior = new Date(`${vigencia_desde}T00:00:00`);
     diaAnterior.setDate(diaAnterior.getDate() - 1);
     const prevHasta = `${diaAnterior.getFullYear()}-${String(diaAnterior.getMonth() + 1).padStart(2, '0')}-${String(diaAnterior.getDate()).padStart(2, '0')}`;
@@ -59,10 +59,10 @@ const crear = async ({ nombre, precio_inscripcion, costo_cuota_mensual, vigencia
             [prevHasta, nombre]
         );
         const { rows } = await client.query(
-            `INSERT INTO nivel_curso (nombre, precio_inscripcion, costo_cuota_mensual, vigencia_desde, vigencia_hasta)
-             VALUES ($1, $2, $3, $4, $5)
+            `INSERT INTO nivel_curso (nombre, precio_inscripcion, vigencia_desde, vigencia_hasta)
+             VALUES ($1, $2, $3, $4)
              RETURNING *`,
-            [nombre, precio_inscripcion, costo_cuota_mensual, vigencia_desde, vigencia_hasta]
+            [nombre, precio_inscripcion, vigencia_desde, vigencia_hasta]
         );
         await client.query("COMMIT");
         return rows[0];

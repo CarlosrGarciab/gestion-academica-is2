@@ -12,9 +12,6 @@ const toDTO = (row) => ({
     precioInscripcion: row.precio_inscripcion === null || row.precio_inscripcion === undefined
         ? null
         : Number(row.precio_inscripcion),
-    costoCuotaMensual: row.costo_cuota_mensual === null || row.costo_cuota_mensual === undefined
-        ? null
-        : Number(row.costo_cuota_mensual),
     activo: row.activo,
 });
 

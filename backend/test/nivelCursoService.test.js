@@ -36,20 +36,8 @@ test('crear nivel rechaza precio menor o igual a 0', async () => {
   const originales = mockModel();
   try {
     await assert.rejects(
-      nivelCursoService.crear({ nombre: 'principiante', precioInscripcion: 0, costoCuotaMensual: 100000, vigenciaDesde: '2026-01-01' }),
+      nivelCursoService.crear({ nombre: 'principiante', precioInscripcion: 0, vigenciaDesde: '2026-01-01' }),
       { message: 'El precio de inscripcion debe ser mayor a 0' }
-    );
-  } finally {
-    restaurar(originales);
-  }
-});
-
-test('crear nivel rechaza cuota mensual menor o igual a 0', async () => {
-  const originales = mockModel();
-  try {
-    await assert.rejects(
-      nivelCursoService.crear({ nombre: 'principiante', precioInscripcion: 150000, costoCuotaMensual: 0, vigenciaDesde: '2026-01-01' }),
-      { message: 'La cuota mensual debe ser mayor a 0' }
     );
   } finally {
     restaurar(originales);
@@ -60,7 +48,7 @@ test('crear nivel exige fecha de inicio de vigencia', async () => {
   const originales = mockModel();
   try {
     await assert.rejects(
-      nivelCursoService.crear({ nombre: 'principiante', precioInscripcion: 150000, costoCuotaMensual: 100000 }),
+      nivelCursoService.crear({ nombre: 'principiante', precioInscripcion: 150000 }),
       { message: 'La fecha de inicio de vigencia es obligatoria' }
     );
   } finally {
@@ -72,7 +60,7 @@ test('crear nivel rechaza vigencia con fin anterior al inicio', async () => {
   const originales = mockModel();
   try {
     await assert.rejects(
-      nivelCursoService.crear({ nombre: 'principiante', precioInscripcion: 150000, costoCuotaMensual: 100000, vigenciaDesde: '2026-02-01', vigenciaHasta: '2026-01-01' }),
+      nivelCursoService.crear({ nombre: 'principiante', precioInscripcion: 150000, vigenciaDesde: '2026-02-01', vigenciaHasta: '2026-01-01' }),
       { message: 'La fecha de fin de vigencia no puede ser anterior a la de inicio' }
     );
   } finally {
@@ -84,7 +72,7 @@ test('crear nivel rechaza una nueva vigencia que no sea posterior a la anterior'
   const originales = mockModel({ buscarUltimoDesde: async () => '2026-10-01' });
   try {
     await assert.rejects(
-      nivelCursoService.crear({ nombre: 'principiante', precioInscripcion: 160000, costoCuotaMensual: 110000, vigenciaDesde: '2026-10-01' }),
+      nivelCursoService.crear({ nombre: 'principiante', precioInscripcion: 160000, vigenciaDesde: '2026-10-01' }),
       { message: 'Ya hay un arancel registrado para el nivel principiante desde 2026-10-01; la nueva vigencia debe comenzar despues' }
     );
   } finally {
@@ -98,12 +86,10 @@ test('crear nivel persiste con la fecha de fin nula', async () => {
     crear: async (d) => { datos = d; return { id: 1, ...d }; },
   });
   try {
-    const nivel = await nivelCursoService.crear({ nombre: 'Intermedio', precioInscripcion: '250000', costoCuotaMensual: '150000', vigenciaDesde: '2026-01-01' });
+    const nivel = await nivelCursoService.crear({ nombre: 'Intermedio', precioInscripcion: '250000', vigenciaDesde: '2026-01-01' });
     assert.equal(datos.nombre, 'intermedio');
     assert.equal(datos.vigencia_hasta, null);
-    assert.equal(datos.costo_cuota_mensual, 150000);
     assert.equal(nivel.precioInscripcion, 250000);
-    assert.equal(nivel.costoCuotaMensual, 150000);
   } finally {
     restaurar(originales);
   }

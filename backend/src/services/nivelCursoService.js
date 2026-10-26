@@ -13,7 +13,6 @@ const toDTO = (row) => ({
     id: row.id,
     nombre: row.nombre,
     precioInscripcion: Number(row.precio_inscripcion),
-    costoCuotaMensual: Number(row.costo_cuota_mensual),
     vigenciaDesde: formatearFecha(row.vigencia_desde),
     vigenciaHasta: formatearFecha(row.vigencia_hasta),
 });
@@ -38,7 +37,7 @@ const obtenerPrecioVigente = async (nombre, fecha = hoy()) => {
     return Number(nivel.precio_inscripcion);
 };
 
-const crear = async ({ nombre, precioInscripcion, costoCuotaMensual, vigenciaDesde, vigenciaHasta }) => {
+const crear = async ({ nombre, precioInscripcion, vigenciaDesde, vigenciaHasta }) => {
     const nombreNormalizado = nombre?.trim().toLowerCase();
     if (!nivelCursoModel.NIVELES.includes(nombreNormalizado)) {
         throw new ApiError(400, "El nivel debe ser principiante, intermedio o avanzado");
@@ -47,11 +46,6 @@ const crear = async ({ nombre, precioInscripcion, costoCuotaMensual, vigenciaDes
     const precio = Number(precioInscripcion);
     if (!Number.isFinite(precio) || precio <= 0) {
         throw new ApiError(400, "El precio de inscripcion debe ser mayor a 0");
-    }
-
-    const cuota = Number(costoCuotaMensual);
-    if (!Number.isFinite(cuota) || cuota <= 0) {
-        throw new ApiError(400, "La cuota mensual debe ser mayor a 0");
     }
 
     if (!vigenciaDesde) {
@@ -69,7 +63,6 @@ const crear = async ({ nombre, precioInscripcion, costoCuotaMensual, vigenciaDes
     const nivel = await nivelCursoModel.crear({
         nombre: nombreNormalizado,
         precio_inscripcion: precio,
-        costo_cuota_mensual: cuota,
         vigencia_desde: vigenciaDesde,
         vigencia_hasta: vigenciaHasta || null,
     });

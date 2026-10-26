@@ -26,31 +26,21 @@ CREATE TABLE IF NOT EXISTS nivel_curso (
     id SERIAL PRIMARY KEY,
     nombre VARCHAR(30) NOT NULL CHECK (nombre IN ('principiante', 'intermedio', 'avanzado')),
     precio_inscripcion NUMERIC(10,2) NOT NULL CHECK (precio_inscripcion >= 0),
-    costo_cuota_mensual NUMERIC(10,2) NOT NULL CHECK (costo_cuota_mensual > 0),
     vigencia_desde DATE NOT NULL,
     vigencia_hasta DATE CHECK (vigencia_hasta IS NULL OR vigencia_hasta >= vigencia_desde)
 );
 
 ALTER TABLE nivel_curso DROP CONSTRAINT IF EXISTS nivel_curso_nombre_key;
+ALTER TABLE nivel_curso DROP COLUMN IF EXISTS costo_cuota_mensual;
 
-INSERT INTO nivel_curso (nombre, precio_inscripcion, costo_cuota_mensual, vigencia_desde, vigencia_hasta)
-SELECT nombre, precio_inscripcion, costo_cuota_mensual, vigencia_desde::date, vigencia_hasta::date
+INSERT INTO nivel_curso (nombre, precio_inscripcion, vigencia_desde, vigencia_hasta)
+SELECT nombre, precio_inscripcion, vigencia_desde::date, vigencia_hasta::date
 FROM (VALUES
-    ('principiante', 150000, 100000, '2026-01-01', NULL),
-    ('intermedio', 250000, 150000, '2026-01-01', NULL),
-    ('avanzado', 350000, 200000, '2026-01-01', NULL)
-) AS v(nombre, precio_inscripcion, costo_cuota_mensual, vigencia_desde, vigencia_hasta)
+    ('principiante', 150000, '2026-01-01', NULL),
+    ('intermedio', 250000, '2026-01-01', NULL),
+    ('avanzado', 350000, '2026-01-01', NULL)
+) AS v(nombre, precio_inscripcion, vigencia_desde, vigencia_hasta)
 WHERE NOT EXISTS (SELECT 1 FROM nivel_curso n2 WHERE n2.nombre = v.nombre);
-
-ALTER TABLE nivel_curso ADD COLUMN IF NOT EXISTS costo_cuota_mensual NUMERIC(10,2);
-UPDATE nivel_curso
-SET costo_cuota_mensual = CASE nombre
-    WHEN 'principiante' THEN 100000
-    WHEN 'intermedio' THEN 150000
-    ELSE 200000
-END
-WHERE costo_cuota_mensual IS NULL;
-ALTER TABLE nivel_curso ALTER COLUMN costo_cuota_mensual SET NOT NULL;
 
 CREATE TABLE IF NOT EXISTS categoria_docente (
     id SERIAL PRIMARY KEY,
@@ -109,7 +99,6 @@ CREATE TABLE IF NOT EXISTS cohorte (
 
 ALTER TABLE cohorte DROP COLUMN IF EXISTS costo_inscripcion;
 ALTER TABLE cohorte DROP COLUMN IF EXISTS tarifa_hora_docente;
-ALTER TABLE cohorte DROP COLUMN IF EXISTS costo_cuota_mensual;
 
 CREATE TABLE IF NOT EXISTS inscripcion (
     id SERIAL PRIMARY KEY,
@@ -121,6 +110,15 @@ CREATE TABLE IF NOT EXISTS inscripcion (
     fecha_confirmacion TIMESTAMP,
     UNIQUE (id_estudiante, id_cohorte)
 );
+
+CREATE TABLE IF NOT EXISTS pago (
+    id SERIAL PRIMARY KEY,
+    numero_comprobante BIGSERIAL NOT NULL UNIQUE,
+    id_inscripcion INT NOT NULL UNIQUE REFERENCES inscripcion(id),
+    monto NUMERIC(12,2) NOT NULL CHECK (monto > 0),
+    fecha_pago TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+ALTER TABLE pago DROP COLUMN IF EXISTS tipo;
 
 CREATE TABLE IF NOT EXISTS registro_horas_docente (
     id SERIAL PRIMARY KEY,

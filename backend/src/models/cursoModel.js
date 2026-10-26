@@ -2,10 +2,10 @@ const pool = require("../config/db");
 
 const buscarPorId = async (id) => {
     const resultado = await pool.query(
-        `SELECT c.*, n.precio_inscripcion, n.costo_cuota_mensual
+        `SELECT c.*, n.precio_inscripcion
          FROM curso c
          LEFT JOIN LATERAL (
-             SELECT np.precio_inscripcion, np.costo_cuota_mensual
+             SELECT np.precio_inscripcion
              FROM nivel_curso np
              WHERE np.nombre = c.nivel
                AND np.vigencia_desde <= CURRENT_DATE
@@ -22,10 +22,10 @@ const buscarPorId = async (id) => {
 
 const obtenerCursos = async () => {
     const resultado = await pool.query(
-        `SELECT c.*, n.precio_inscripcion, n.costo_cuota_mensual
+        `SELECT c.*, n.precio_inscripcion
          FROM curso c
          LEFT JOIN LATERAL (
-             SELECT np.precio_inscripcion, np.costo_cuota_mensual
+             SELECT np.precio_inscripcion
              FROM nivel_curso np
              WHERE np.nombre = c.nivel
                AND np.vigencia_desde <= CURRENT_DATE
